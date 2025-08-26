@@ -1,0 +1,13 @@
+{
+  "itemGroup.simple_stamina": "Example Mod Tab",
+  "block.simple_stamina.example_block": "Example Block",
+  "item.simple_stamina.example_item": "Example Item",
+
+  "simple_stamina.configuration.title": "Simple Stamina Configs",
+  "simple_stamina.configuration.section.simple_stamina.common.toml": "Simple Stamina Configs",
+  "simple_stamina.configuration.section.simple_stamina.common.toml.title": "Simple Stamina Configs",
+  "simple_stamina.configuration.items": "Item List",
+  "simple_stamina.configuration.logDirtBlock": "Log Dirt Block",
+  "simple_stamina.configuration.magicNumberIntroduction": "Magic Number Text",
+  "simple_stamina.configuration.magicNumber": "Magic Number"
+}
