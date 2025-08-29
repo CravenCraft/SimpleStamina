@@ -1,5 +1,8 @@
 package com.cravencraft.stamina;
 
+import com.cravencraft.stamina.events.StaminaEvents;
+import com.cravencraft.stamina.registries.AttributeRegistry;
+import com.cravencraft.stamina.registries.DataAttachmentRegistry;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -16,7 +19,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -38,6 +40,8 @@ public class SimpleStamina {
     public static final String MODID = "simple_stamina";
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
+    public static StaminaManager STAMINA_MANAGER;
+
     // Create a Deferred Register to hold Blocks which will all be registered under the "simple_stamina" namespace
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
     // Create a Deferred Register to hold Items which will all be registered under the "simple_stamina" namespace
@@ -67,7 +71,9 @@ public class SimpleStamina {
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public SimpleStamina(IEventBus modEventBus, ModContainer modContainer) {
         // Register the commonSetup method for modloading
+        ModSetup.setup();
         modEventBus.addListener(this::commonSetup);
+        STAMINA_MANAGER = new StaminaManager();
 
         // Register the Deferred Register to the mod event bus so blocks get registered
         BLOCKS.register(modEventBus);
@@ -80,6 +86,9 @@ public class SimpleStamina {
         // Note that this is necessary if and only if we want *this* class (SimpleStamina) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
         NeoForge.EVENT_BUS.register(this);
+
+        DataAttachmentRegistry.register(modEventBus);
+        AttributeRegistry.register(modEventBus);
 
         // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
