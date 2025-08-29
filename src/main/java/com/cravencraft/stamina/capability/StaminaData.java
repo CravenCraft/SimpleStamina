@@ -20,7 +20,6 @@ public class StaminaData {
     /** Static Fields for NBT Data **/
     public static final String STAMINA = "stamina";
 
-
     private boolean isMob;
     private float stamina;
     private ServerPlayer serverPlayer = null;
@@ -53,11 +52,18 @@ public class StaminaData {
             if (this.stamina > maxStamina) {
                 this.stamina = maxStamina;
             }
+            if (this.stamina <= 0) {
+                this.stamina = 0;
+            }
         }
     }
 
     public void addStamina(float stamina) {
         setStamina(this.stamina + stamina);
+    }
+
+    public void removeStamina(float stamina) {
+        setStamina(this.stamina - stamina);
     }
 
     public static StaminaData getPlayerStaminaData(LivingEntity livingEntity) {

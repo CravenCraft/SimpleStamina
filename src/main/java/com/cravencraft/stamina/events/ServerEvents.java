@@ -9,6 +9,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 @Mod(SimpleStamina.MODID)
 @EventBusSubscriber(modid = SimpleStamina.MODID, value = Dist.DEDICATED_SERVER)
@@ -16,8 +17,9 @@ public class ServerEvents {
 
 
     @SubscribeEvent
-    public static void onPlayerJoin(EntityJoinLevelEvent event) {
+    public static void onPlayerJoin(PlayerTickEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+//            event.getEntity().isSprinting()
             player.getUUID();
         }
     }

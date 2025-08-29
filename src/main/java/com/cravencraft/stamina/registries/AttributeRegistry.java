@@ -20,6 +20,18 @@ public class AttributeRegistry {
             new RangedAttribute("attribute.simple_stamina.max_stamina", 100.0D, 0.0D, 10000.0D).setSyncable(true)
     ));
 
+    public static DeferredHolder<Attribute, Attribute> STAMINA_REGEN = ATTRIBUTES.register("stamina_regen", () -> (
+            new RangedAttribute("attribute.simple_stamina.stamina_regen", 1.0D, 0.0D, 10.0D).setSyncable(true)
+            ));
+
+    public static DeferredHolder<Attribute, Attribute> SPRINT_STAMINA_COST = ATTRIBUTES.register("sprint_stamina_cost", () -> (
+            new RangedAttribute("attribute.simple_stamina.sprint_stamina_cost", 0.25D, 0.0D, 10.0D).setSyncable(true)
+    ));
+
+    public static DeferredHolder<Attribute, Attribute> SWIM_STAMINA_COST = ATTRIBUTES.register("swim_stamina_cost", () -> (
+            new RangedAttribute("attribute.simple_stamina.swim_stamina_cost", 0.5D, 0.0D, 10.0D).setSyncable(true)
+    ));
+
     public static void register(IEventBus eventBus) { ATTRIBUTES.register(eventBus); }
 
     @SubscribeEvent
