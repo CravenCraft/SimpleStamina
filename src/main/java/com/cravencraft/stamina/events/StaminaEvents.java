@@ -1,21 +1,26 @@
 package com.cravencraft.stamina.events;
 
 import com.cravencraft.stamina.SimpleStamina;
-import com.cravencraft.stamina.client.ClientStaminaData;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
+import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
+@EventBusSubscriber(modid = SimpleStamina.MODID)
 public class StaminaEvents {
 
+    @SubscribeEvent
     public static void onPlayerJoin(EntityJoinLevelEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             SimpleStamina.SERVER_STAMINA_MANAGER.onPlayerJoin(serverPlayer);
         }
     }
 
+    @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Pre event) {
         var player = event.getEntity();
 
@@ -24,10 +29,28 @@ public class StaminaEvents {
         }
         else if (player instanceof LocalPlayer localPlayer) {
             SimpleStamina.CLIENT_STAMINA_MANAGER.clientTick(localPlayer);
-            var clientPlayerStamina = ClientStaminaData.getStamina();
+//            var clientPlayerStamina = CLIENT_STAMINA_DATA.getStamina();
         }
     }
 
+    /**
+     * Fires whenever the player attempts to block an attack. Fires even if the block attempt fails (block too late).
+     *
+     * @param event
+     */
+    @SubscribeEvent
+    public static void onPlayerBlock(LivingShieldBlockEvent event) {
+        if (event.getBlocked() && event.getEntity() instanceof ServerPlayer serverPlayer) {
+
+            SimpleStamina.LOGGER.info("player blocked: {}", event.getBlocked());
+            SimpleStamina.LOGGER.info("original blocked damage: {}", event.getOriginalBlockedDamage());
+            SimpleStamina.LOGGER.info("blocked damage: {}", event.getBlockedDamage());
+            SimpleStamina.LOGGER.info("shield damage: {}", event.shieldDamage());
+            SimpleStamina.SERVER_STAMINA_MANAGER.playerBlockAttack(serverPlayer, event.getBlockedDamage());
+        }
+    }
+
+    @SubscribeEvent
     public static void onPlayerJump(LivingEvent.LivingJumpEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             SimpleStamina.SERVER_STAMINA_MANAGER.playerJump(serverPlayer);

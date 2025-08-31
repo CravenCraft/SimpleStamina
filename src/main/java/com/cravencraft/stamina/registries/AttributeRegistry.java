@@ -30,10 +30,16 @@ public class AttributeRegistry {
             new RangedAttribute("attribute.simple_stamina.swim_stamina_cost", 0.5D, 0.0D, 10.0D).setSyncable(true)
     ));
     public static DeferredHolder<Attribute, Attribute> JUMP_STAMINA_COST = ATTRIBUTES.register("jump_stamina_cost", () -> (
-            new RangedAttribute("attribute.simple_stamina.jump_stamina_cost", 2.0D, 0.0D, 10.0D).setSyncable(true)
+            new RangedAttribute("attribute.simple_stamina.jump_stamina_cost", 10.0D, 0.0D, 10.0D).setSyncable(true)
     ));
     public static DeferredHolder<Attribute, Attribute> ATTACK_STAMINA_COST = ATTRIBUTES.register("attack_stamina_cost", () -> (
             new RangedAttribute("attribute.simple_stamina.attack_stamina_cost", 1.0D, 0.0D, 100.0D).setSyncable(true)
+    ));
+    public static DeferredHolder<Attribute, Attribute> PULL_BOW_STAMINA_COST = ATTRIBUTES.register("pull_bow_stamina_cost", () -> (
+            new RangedAttribute("attribute.simple_stamina.pull_bow_stamina_cost", 1.0D, 0.0D, 100.0D).setSyncable(true)
+    ));
+    public static DeferredHolder<Attribute, Attribute> BLOCK_STAMINA_COST = ATTRIBUTES.register("block_stamina_cost", () -> (
+            new RangedAttribute("attribute.simple_stamina.block_stamina_cost", 1.0D, 0.0D, 100.0D).setSyncable(true)
     ));
 
     public static void register(IEventBus eventBus) { ATTRIBUTES.register(eventBus); }

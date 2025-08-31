@@ -1,7 +1,7 @@
 package com.cravencraft.stamina.manager;
 
 import com.cravencraft.stamina.SimpleStamina;
-import com.cravencraft.stamina.capability.StaminaData;
+import com.cravencraft.stamina.capability.ServerStaminaData;
 import com.cravencraft.stamina.config.ServerConfigs;
 import com.cravencraft.stamina.network.SyncStaminaPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -11,43 +11,55 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
+
 public class ServerStaminaManager extends StaminaManager {
     public static final ResourceLocation ATTACK_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath(SimpleStamina.MODID, "attack_speed_modifier");
 
+    // TODO: Want to set this up to immediately set the client player's stamina to the server player's stamina.
+    //       Don't want to use addStamina(). Want to use setStamina().
     public void onPlayerJoin(ServerPlayer serverPlayer) {
-        SimpleStamina.LOGGER.info("Player {} has joined. Syncing Stamina.", serverPlayer.getDisplayName());
-        var playerStamina = StaminaData.getPlayerStaminaData(serverPlayer);
-        PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(playerStamina));
+        var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
+        SimpleStamina.LOGGER.info("Server player has joined. Syncing Stamina: {}.", serverStaminaData.getStamina());
+        PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(serverStaminaData));
     }
 
     public void tick(ServerPlayer serverPlayer) {
-        var staminaData = StaminaData.getPlayerStaminaData(serverPlayer);
+        var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
+        SimpleStamina.LOGGER.info("SERVER MAX STAMINA: {} ATTRIBUTE MAX STAMINA: {}", serverStaminaData.getMaxStamina(), serverStaminaData.player.getAttributeValue(MAX_STAMINA));
+        serverStaminaData.tickStamina();
 
-        staminaData.tickStamina();
-
-        this.setExhaustionEffects(serverPlayer, staminaData);
+        this.setExhaustionEffects(serverPlayer, serverStaminaData);
 
         // Don't want to clog up the network if there are no updates server-side.
-        if (!staminaData.shouldSendToClient()) return;
+        if (!serverStaminaData.shouldSendToClient()) return;
 
-        PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(staminaData));
+        SimpleStamina.LOGGER.info("IS SENDING TO CLIENT");
+
+        PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(serverStaminaData));
+        serverStaminaData.setSendToClient(false);
     }
 
     public void playerJump(ServerPlayer serverPlayer) {
         SimpleStamina.LOGGER.info("PLAYER IS JUMPING");
-        var staminaData = StaminaData.getPlayerStaminaData(serverPlayer);
-        staminaData.setPlayerJumped();
-        this.tick(serverPlayer);
+        var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
+        serverStaminaData.setPlayerJumped();
+//        this.tick(serverPlayer);
+    }
+
+    public void playerBlockAttack(ServerPlayer serverPlayer, float blockAmount) {
+        var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
+        serverStaminaData.blockAttack(blockAmount);
     }
 
     /**
      * TODO: Have a server config option to fully disable attack damage when exhausted
      *     (by default, I might just have it reduce attack speed and damage by a certain percentage. Gotta set that up).
      * @param serverPlayer
-     * @param staminaData
+     * @param serverStaminaData
      */
-    public void setExhaustionEffects(ServerPlayer serverPlayer, StaminaData staminaData) {
-        var stamina = staminaData.getStamina();
+    public void setExhaustionEffects(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
+        var stamina = serverStaminaData.getStamina();
 
         this.modifyAttackSpeed(serverPlayer, stamina);
         this.disableSprint(serverPlayer, stamina);

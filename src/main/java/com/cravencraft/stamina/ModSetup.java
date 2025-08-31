@@ -9,8 +9,9 @@ public class ModSetup {
     public static void setup() {
         IEventBus bus = NeoForge.EVENT_BUS;
 
-        bus.addListener(StaminaEvents::onPlayerJoin);
-        bus.addListener(StaminaEvents::onPlayerTick);
-        bus.addListener(StaminaEvents::onPlayerJump);
+//        bus.addListener(StaminaEvents::onPlayerJoin);
+//        bus.addListener(StaminaEvents::onPlayerTick);
+//        bus.addListener(StaminaEvents::onPlayerBlock);
+//        bus.addListener(StaminaEvents::onPlayerJump);
     }
 }

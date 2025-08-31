@@ -1,8 +1,8 @@
 package com.cravencraft.stamina.client.gui;
 
 import com.cravencraft.stamina.SimpleStamina;
-import com.cravencraft.stamina.client.ClientStaminaData;
 import com.cravencraft.stamina.config.ClientConfigs;
+import com.cravencraft.stamina.manager.ClientStaminaManager;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
@@ -57,7 +57,8 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         var screenWidth = guiGraphics.guiWidth();
         var screenHeight = guiGraphics.guiHeight();
 
-        if (!shouldShowStaminaBar(player)) {
+        int stamina = (int) ClientStaminaManager.getClientStaminaData().getStamina();
+        if (!shouldShowStaminaBar(player, stamina)) {
             return;
         }
 
@@ -68,7 +69,6 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         Anchor anchor = ClientConfigs.STAMINA_BAR_ANCHOR.get();
 
         int maxStamina = (int) player.getAttributeValue(MAX_STAMINA);
-        int stamina = ClientStaminaData.getStamina();
         int barX = getBarX(anchor, screenWidth) + configOffsetX;
         int barY = getBarY(anchor, screenHeight, Minecraft.getInstance().gui) - configOffsetY;
 
@@ -92,11 +92,11 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
 
     }
 
-    public static boolean shouldShowStaminaBar(LocalPlayer player) {
+    public static boolean shouldShowStaminaBar(LocalPlayer player, int stamina) {
         var display = ClientConfigs.STAMINA_BAR_DISPLAY.get();
 
         return !player.isSpectator() && display != Display.Never &&
-                (display == Display.Always || ClientStaminaData.getStamina() < player.getAttributeValue(MAX_STAMINA));
+                (display == Display.Always || stamina < player.getAttributeValue(MAX_STAMINA));
     }
 
     public boolean doNotRenderGui(LocalPlayer player) {

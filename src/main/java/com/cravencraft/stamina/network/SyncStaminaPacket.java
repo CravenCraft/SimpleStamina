@@ -2,7 +2,8 @@ package com.cravencraft.stamina.network;
 
 import com.cravencraft.stamina.SimpleStamina;
 import com.cravencraft.stamina.capability.StaminaData;
-import com.cravencraft.stamina.client.ClientStaminaData;
+import com.cravencraft.stamina.manager.ClientStaminaManager;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -33,7 +34,20 @@ public class SyncStaminaPacket implements CustomPacketPayload {
 
     public static void handle(SyncStaminaPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ClientStaminaData.setStamina(packet.playerStamina);
+            SimpleStamina.LOGGER.info("SENDING STAMINA TO THE CLIENT: {}", packet.playerStamina);
+
+            if (ClientStaminaManager.getClientStaminaData() == null) {
+                SimpleStamina.LOGGER.info("CLIENT STAMINA IS NULL.");
+                if (Minecraft.getInstance().player != null) {
+                    ClientStaminaManager.onPlayerJoin(Minecraft.getInstance().player);
+                }
+                else {
+                    SimpleStamina.LOGGER.info("CLIENT PLAYER IS NULL.");
+                }
+            }
+            else {
+                ClientStaminaManager.getClientStaminaData().setStaminFromServer(packet.playerStamina);
+            }
         });
     }
 

@@ -1,6 +1,5 @@
 package com.cravencraft.stamina.config;
 
-import com.machinezoo.noexception.CheckedExceptionHandler;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class ServerConfigs {
@@ -15,6 +14,8 @@ public class ServerConfigs {
     public static final ModConfigSpec.ConfigValue<Double> SWIM_STAMINA_MULTIPLIER;
     public static final ModConfigSpec.ConfigValue<Double> JUMP_STAMINA_MULTIPLIER;
     public static final ModConfigSpec.ConfigValue<Double> ATTACK_STAMINA_MULTIPLIER;
+    public static final ModConfigSpec.ConfigValue<Double> PULL_BOW_STAMINA_MULTIPLIER;
+    public static final ModConfigSpec.ConfigValue<Double> BLOCK_STAMINA_MULTIPLIER;
     public static final ModConfigSpec.ConfigValue<Double> ATTACK_SPEED_REDUCTION_MULTIPLIER;
 
     public static final ModConfigSpec SPEC;
@@ -52,6 +53,9 @@ public class ServerConfigs {
         SWIM_STAMINA_MULTIPLIER = BUILDER.define("swimStaminaMultiplier", 1.0D);
         JUMP_STAMINA_MULTIPLIER = BUILDER.define("jumpStaminaMultiplier", 1.0D);
         ATTACK_STAMINA_MULTIPLIER = BUILDER.define("attackStaminaMultiplier", 1.0D);
+        BUILDER.comment("For both the bow and crossbow.");
+        PULL_BOW_STAMINA_MULTIPLIER = BUILDER.define("pullBowStaminaMultiplier", 1.0D);
+        BLOCK_STAMINA_MULTIPLIER = BUILDER.define("blockStaminaMultiplier", 1.0D);
         BUILDER.comment("Global multiplier for the attack speed reduction whenever a player is out of stamina. Default 0.75D (75%).");
         ATTACK_SPEED_REDUCTION_MULTIPLIER = BUILDER.defineInRange("attackSpeedReductionMultiplier", 0.75D, 0.0D, 1.0D);
         BUILDER.pop();

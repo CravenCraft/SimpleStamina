@@ -78,8 +78,9 @@ public class SimpleStamina {
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public SimpleStamina(IEventBus modEventBus, ModContainer modContainer) {
         // Register the commonSetup method for modloading
-        ModSetup.setup();
+//        ModSetup.setup();
         modEventBus.addListener(this::commonSetup);
+
         SERVER_STAMINA_MANAGER = new ServerStaminaManager();
         CLIENT_STAMINA_MANAGER = new ClientStaminaManager();
 
