@@ -21,15 +21,8 @@ public class ServerStaminaData extends StaminaData {
     /** Static Fields for NBT Data **/
     public static final String STAMINA = "stamina";
 
-    /** Static fields for stamina regen ticks */
-//    public static final int STAMINA_REGEN_TICKS = 60; // TODO: Probably wanna have this as a server config.
-//    public static int STAMINA_REGEN_COOLDOWN = 0;
-
     private boolean isMob;
     private boolean isSwinging;
-//    private boolean sendToClient;
-//    private int maxStamina;
-//    private float stamina;
     private float swingStaminaCost;
     private int swingDuration;
     private ServerPlayer serverPlayer = null;
@@ -49,13 +42,6 @@ public class ServerStaminaData extends StaminaData {
         this.serverPlayer = serverPlayer;
     }
 
-//    public StaminaData(LocalPlayer localPlayer) {
-//        this(false);
-//        this.player = localPlayer;
-//        this.localPlayer = localPlayer;
-//        this.maxStamina = (int) this.player.getAttributeValue(MAX_STAMINA);
-//    }
-
     public boolean isSwinging() {
         return this.isSwinging;
     }
@@ -63,14 +49,6 @@ public class ServerStaminaData extends StaminaData {
     public void setSwinging(boolean isSwinging) {
         this.isSwinging = isSwinging;
     }
-
-//    public boolean shouldSendToClient() {
-//        return this.sendToClient;
-//    }
-//
-//    public void setSendToClient(boolean sendToClient) {
-//        this.sendToClient = sendToClient;
-//    }
 
     public int getSwingDuration() {
         return this.swingDuration;
@@ -106,46 +84,7 @@ public class ServerStaminaData extends StaminaData {
         this.tickAttackStaminaCost();
     }
 
-//    public int getMaxStamina() {
-//        return this.maxStamina;
-//    }
-
-//    public void setMaxStamina(int maxStamina) {
-//        this.maxStamina = maxStamina;
-//    }
-
-//    public float getStamina() {
-//        return this.stamina;
-//    }
-
-//    @Override
-//    public void setStamina(float stamina) {
-//        super.setStamina(stamina);
-//
-//        this.sendToClient = true;
-//    }
-
-//    public void addStamina(float stamina) {
-//        super.addStamina(stamina);
-//        if (this.stamina >= this.maxStamina) return;
-//
-//        var staminaToSet = (Mth.clamp(stamina, 0.0f, this.maxStamina));
-//        setStamina(this.stamina + staminaToSet);
-//    }
-
-//    public void removeStamina(float stamina) {
-//        STAMINA_REGEN_COOLDOWN = STAMINA_REGEN_TICKS;
-//        if (this.stamina <= 0.0f) return;
-//
-//        var playerMaxStamina = (float) this.player.getAttributeValue(MAX_STAMINA);
-//        var staminaToSet = Mth.clamp(stamina, 0.0f, playerMaxStamina);
-//        staminaToSet = this.stamina - stamina;
-//        staminaToSet = (staminaToSet > 1) ? staminaToSet : 0;
-//        setStamina(staminaToSet);
-//    }
-
     public void setStamina(float stamina) {
-//        super.setStamina(stamina);
         ChangeStaminaEvent event = new ChangeStaminaEvent(this.player, this, this.stamina, stamina);
         if (!NeoForge.EVENT_BUS.post(event).isCanceled()) {
             this.stamina = event.getNewStamina();

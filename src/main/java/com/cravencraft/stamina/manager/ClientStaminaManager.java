@@ -6,8 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
 public class ClientStaminaManager extends StaminaManager {
-
-    private LocalPlayer localPlayer;
     private static ClientStaminaData clientStaminaData;
 
     public static ClientStaminaData getClientStaminaData() {
@@ -17,17 +15,7 @@ public class ClientStaminaManager extends StaminaManager {
     public static void onPlayerJoin(LocalPlayer localPlayer) {
         clientStaminaData = new ClientStaminaData(localPlayer);
         SimpleStamina.LOGGER.info("Client player has joined. Syncing Stamina: {}.", clientStaminaData.getStamina());
-//        PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(serverStaminaData));
     }
-
-//    public ClientStaminaManager() {
-//        this.localPlayer = Minecraft.getInstance().player;
-//        CLIENT_STAMINA_DATA = new ClientStaminaData(localPlayer);
-//    }
-
-//    public ClientStaminaData getClientStaminaData() {
-//        return this.clientStaminaData;
-//    }
 
     public void clientTick(LocalPlayer localPlayer) {
         clientStaminaData.tickStamina();
