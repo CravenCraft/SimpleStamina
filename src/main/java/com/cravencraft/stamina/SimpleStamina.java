@@ -3,6 +3,8 @@ package com.cravencraft.stamina;
 import com.cravencraft.stamina.config.ClientConfigs;
 import com.cravencraft.stamina.config.CommonConfigs;
 import com.cravencraft.stamina.config.ServerConfigs;
+import com.cravencraft.stamina.manager.ClientStaminaManager;
+import com.cravencraft.stamina.manager.ServerStaminaManager;
 import com.cravencraft.stamina.registries.AttributeRegistry;
 import com.cravencraft.stamina.registries.DataAttachmentRegistry;
 import net.minecraft.resources.ResourceLocation;
@@ -44,7 +46,8 @@ public class SimpleStamina {
     public static final String MODID = "simple_stamina";
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static StaminaManager STAMINA_MANAGER;
+    public static ServerStaminaManager SERVER_STAMINA_MANAGER;
+    public static ClientStaminaManager CLIENT_STAMINA_MANAGER;
 
     // Create a Deferred Register to hold Blocks which will all be registered under the "simple_stamina" namespace
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
@@ -77,7 +80,8 @@ public class SimpleStamina {
         // Register the commonSetup method for modloading
         ModSetup.setup();
         modEventBus.addListener(this::commonSetup);
-        STAMINA_MANAGER = new StaminaManager();
+        SERVER_STAMINA_MANAGER = new ServerStaminaManager();
+        CLIENT_STAMINA_MANAGER = new ClientStaminaManager();
 
         // Register the Deferred Register to the mod event bus so blocks get registered
         BLOCKS.register(modEventBus);

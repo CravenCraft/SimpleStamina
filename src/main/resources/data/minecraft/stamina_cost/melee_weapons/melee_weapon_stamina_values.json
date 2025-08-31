@@ -1,0 +1,14 @@
+[
+  {
+    "name": "wooden_sword",
+    "stamina_cost": 2
+  },
+  {
+    "name": "iron_sword",
+    "stamina_cost": 5
+  },
+  {
+    "name": "iron_axe",
+    "stamina_cost": 7
+  }
+]

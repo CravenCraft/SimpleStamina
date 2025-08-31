@@ -1,0 +1,10 @@
+[
+  {
+    "name": "bow",
+    "stamina_cost": 3
+  },
+  {
+    "name": "crossbow",
+    "stamina_cost": 5
+  }
+]
