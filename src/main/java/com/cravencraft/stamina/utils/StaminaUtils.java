@@ -8,9 +8,9 @@ import static com.cravencraft.stamina.registries.DatapackRegistry.MELEE_WEAPONS_
 
 public class StaminaUtils {
     public static float calculateStaminaRegenIncrement(ServerPlayer serverPlayer) {
-        var regenPercentage = .01f;
+        var regenPercentage = (float) serverPlayer.getAttributeValue(STAMINA_REGEN);
         var playerMaxStamina = (int) serverPlayer.getAttributeValue(MAX_STAMINA);
-        var playerStaminaRegenMultiplier = (float) serverPlayer.getAttributeValue(STAMINA_REGEN);
+        var playerStaminaRegenMultiplier = ServerConfigs.STAMINA_REGEN_MULTIPLIER.get().floatValue();
 
         return playerMaxStamina *
                 regenPercentage *
@@ -34,8 +34,9 @@ public class StaminaUtils {
                        ServerConfigs.JUMP_STAMINA_MULTIPLIER.get().floatValue();
     }
 
+    // TODO: Later, add some attributes to modify the attack stamina cost, which can be something like an attribute
+    //       that can be leveled up to decrease attack stamina cost by a percentage (similar to the regen rate attribute).
     public static float calculateAttackStaminaCost(ServerPlayer serverPlayer) {
-        var attackDelay = serverPlayer.getCurrentItemAttackStrengthDelay();
         var attackStaminaCost = (float) serverPlayer.getAttributeValue(ATTACK_STAMINA_COST);
         var attackWeaponId = serverPlayer.getMainHandItem().getDescriptionId().replace("item.", "");
 
@@ -44,7 +45,6 @@ public class StaminaUtils {
         }
 
         attackStaminaCost *= ServerConfigs.ATTACK_STAMINA_MULTIPLIER.get().floatValue();
-        attackStaminaCost = attackStaminaCost / attackDelay;
 
         return attackStaminaCost;
     }

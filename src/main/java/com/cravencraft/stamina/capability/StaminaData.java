@@ -14,22 +14,15 @@ import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
  *       then sent to the local player for various things such as displaying the GUI and such (GUI might be diff class).
  */
 public abstract class StaminaData {
-    /** Static Fields for NBT Data **/
-    public static final String STAMINA = "stamina";
 
     /** Static fields for stamina regen ticks */
     public static final int STAMINA_REGEN_TICKS = 60; // TODO: Probably wanna have this as a server config.
     public static int STAMINA_REGEN_COOLDOWN = 0;
 
     private boolean isMob;
-    private boolean isSwinging;
-    protected boolean sendToClient;
     protected int maxStamina;
     protected float stamina;
-    private float swingStaminaCost;
-    private int swingDuration;
     public Player player = null;
-    private boolean hasPlayerJumped;
 
     public StaminaData(boolean isMob) {
         this.isMob = isMob;
@@ -49,46 +42,6 @@ public abstract class StaminaData {
 
     public abstract void tickStamina();
 
-    public boolean isSwinging() {
-        return this.isSwinging;
-    }
-
-    public void setSwinging(boolean isSwinging) {
-        this.isSwinging = isSwinging;
-    }
-
-    public boolean shouldSendToClient() {
-        return this.sendToClient;
-    }
-
-    public void setSendToClient(boolean sendToClient) {
-        this.sendToClient = sendToClient;
-    }
-
-    public int getSwingDuration() {
-        return this.swingDuration;
-    }
-
-    public void setSwingDuration(int swingDuration) {
-        this.swingDuration = swingDuration;
-    }
-
-    public float getSwingStaminaCost() {
-        return this.swingStaminaCost;
-    }
-
-    public void setSwingStaminaCost(float swingStaminaCost) {
-        this.swingStaminaCost = swingStaminaCost;
-    }
-
-    public boolean hasPlayerJumped() {
-        return this.hasPlayerJumped;
-    }
-
-    public void setPlayerJumped() {
-        this.hasPlayerJumped = true;
-    }
-
     public int getMaxStamina() {
         return this.maxStamina;
     }
@@ -102,21 +55,19 @@ public abstract class StaminaData {
     }
 
     // TODO: I'd like to rework these a bit later.
-    public float getStaminaToAdd(float stamina) {
+    public float getStaminaAfterAdd(float stamina) {
         if (this.stamina >= this.maxStamina) return 0.0f;
 
         var staminaToSet = (Mth.clamp(stamina, 0.0f, this.maxStamina));
-        return this.stamina + staminaToSet;
+        return Math.min(this.stamina + staminaToSet, this.maxStamina);
     }
 
-    public float getStaminaToSet(float stamina) {
+    public float getStaminaAfterRemove(float stamina) {
         STAMINA_REGEN_COOLDOWN = STAMINA_REGEN_TICKS;
         if (this.stamina <= 0.0f) return 0.0f;
 
         var playerMaxStamina = (float) this.player.getAttributeValue(MAX_STAMINA);
         var staminaToSet = Mth.clamp(stamina, 0.0f, playerMaxStamina);
-        staminaToSet = this.stamina - stamina;
-        staminaToSet = (staminaToSet > 1) ? staminaToSet : 0;
-        return staminaToSet;
+        return Math.max(this.stamina - staminaToSet, 0);
     }
 }

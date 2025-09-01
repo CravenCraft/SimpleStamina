@@ -1,14 +1,21 @@
 package com.cravencraft.stamina.capability;
 
-import com.cravencraft.stamina.SimpleStamina;
+import com.cravencraft.stamina.config.ServerConfigs;
 import com.cravencraft.stamina.events.ChangeStaminaEvent;
+import com.cravencraft.stamina.network.SyncStaminaPacket;
 import com.cravencraft.stamina.registries.DataAttachmentRegistry;
 import com.cravencraft.stamina.utils.StaminaUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+import static com.cravencraft.stamina.manager.ServerStaminaManager.ATTACK_SPEED_MODIFIER;
 
 /**
  * TODO: Ok, got the basics of the event system down. Need to decide how I want to do this, and if I want to break this
@@ -19,14 +26,12 @@ import net.neoforged.neoforge.common.NeoForge;
  */
 public class ServerStaminaData extends StaminaData {
     /** Static Fields for NBT Data **/
-    public static final String STAMINA = "stamina";
+    private static final String STAMINA = "stamina";
 
     private boolean isMob;
-    private boolean isSwinging;
-    private float swingStaminaCost;
     private int swingDuration;
+    private int swingTick;
     private ServerPlayer serverPlayer = null;
-    private boolean hasPlayerJumped;
 
     public ServerStaminaData() {
         this(false);
@@ -42,36 +47,10 @@ public class ServerStaminaData extends StaminaData {
         this.serverPlayer = serverPlayer;
     }
 
-    public boolean isSwinging() {
-        return this.isSwinging;
-    }
-
-    public void setSwinging(boolean isSwinging) {
-        this.isSwinging = isSwinging;
-    }
-
-    public int getSwingDuration() {
-        return this.swingDuration;
-    }
-
-    public void setSwingDuration(int swingDuration) {
-        this.swingDuration = swingDuration;
-    }
-
-    public float getSwingStaminaCost() {
-        return this.swingStaminaCost;
-    }
-
-    public void setSwingStaminaCost(float swingStaminaCost) {
-        this.swingStaminaCost = swingStaminaCost;
-    }
-
-    public boolean hasPlayerJumped() {
-        return this.hasPlayerJumped;
-    }
-
-    public void setPlayerJumped() {
-        this.hasPlayerJumped = true;
+    public void playerJump() {
+        var staminaCost = StaminaUtils.calculateJumpStaminaCost(this.serverPlayer);
+        var staminaToSet = this.getStaminaAfterRemove(staminaCost);
+        this.setStamina(staminaToSet);
     }
 
     @Override
@@ -80,7 +59,6 @@ public class ServerStaminaData extends StaminaData {
 
         this.tickSprintStaminaCost();
         this.tickSwimStaminaCost();
-        this.tickJumpStaminaCost();
         this.tickAttackStaminaCost();
     }
 
@@ -96,8 +74,8 @@ public class ServerStaminaData extends StaminaData {
         if (this.stamina <= 0) {
             this.stamina = 0;
         }
-        SimpleStamina.LOGGER.info("NEED TO SEND TO CLIENT. stamina to set: {}", stamina);
-        this.sendToClient = true;
+
+        PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(this));
     }
 
     private void tickStaminaRegen() {
@@ -110,7 +88,7 @@ public class ServerStaminaData extends StaminaData {
 
         var increment = StaminaUtils.calculateStaminaRegenIncrement(serverPlayer);
 
-        var staminaToSet = this.getStaminaToAdd(increment);
+        var staminaToSet = this.getStaminaAfterAdd(increment);
         this.setStamina(staminaToSet);
     }
 
@@ -131,7 +109,7 @@ public class ServerStaminaData extends StaminaData {
         if (!this.serverPlayer.isSprinting()) return;
 
         var staminaCost = StaminaUtils.calculateSprintStaminaCost(this.serverPlayer);
-        var staminaToSet = this.getStaminaToSet(staminaCost);
+        var staminaToSet = this.getStaminaAfterRemove(staminaCost);
         this.setStamina(staminaToSet);
     }
 
@@ -139,17 +117,8 @@ public class ServerStaminaData extends StaminaData {
         if (!this.serverPlayer.isSwimming()) return;
 
         var staminaCost = StaminaUtils.calculateSwimStaminaCost(this.serverPlayer);
-        var staminaToSet = this.getStaminaToSet(staminaCost);
+        var staminaToSet = this.getStaminaAfterRemove(staminaCost);
         this.setStamina(staminaToSet);
-    }
-
-    private void tickJumpStaminaCost() {
-        if (!this.hasPlayerJumped) return;
-
-        var staminaCost = StaminaUtils.calculateJumpStaminaCost(this.serverPlayer);
-        var staminaToSet = this.getStaminaToSet(staminaCost);
-        this.setStamina(staminaToSet);
-        this.hasPlayerJumped = false;
     }
 
     // TODO: Maybe just send the total amount of stamina cost to the client side and have that phantom amount remain
@@ -158,30 +127,58 @@ public class ServerStaminaData extends StaminaData {
     //       Also, have it to where the phantom amount doesn't tick down until the client stops receiving updates for
     //       at least a second or two, and if the client receives another update just pause the reduction (unless 0).
     //       That should keep the bar there and not have any wonky movement.
-
-    // TODO: ALSO, have the actual amount tick down gradually instead of suddenly, but still have it happen pretty fast.
-    //       Maybe divide the amount to remove by 10 ticks so it all can be processed in half a second? Test it out.
     private void tickAttackStaminaCost() {
-        if (this.isSwinging) {
-            SimpleStamina.LOGGER.info("current swing duration: {} swing time: {}",
-                    serverPlayer.getCurrentSwingDuration(),
-                    serverPlayer.getCurrentItemAttackStrengthDelay());
-            this.tickSwingDuration();
+
+        if (this.swingTick < this.swingDuration) {
+            this.swingTick++;
         }
         // For whatever reason the player is swinging when they're sleeping? Have to account for that here.
         else if (this.serverPlayer.swinging && !this.serverPlayer.isSleeping()) {
-            var attackDelay = serverPlayer.getCurrentItemAttackStrengthDelay();
-            var staminaCost = StaminaUtils.calculateAttackStaminaCost(this.serverPlayer);
-
-            this.swingTool((int) attackDelay, staminaCost);
+            this.swingTick = 0;
+            this.modifyAttackSpeed();
+            this.swingTool();
         }
     }
 
-    private void swingTool(int swingDuration, float toolStaminaCost) {
-        this.setSwingDuration(swingDuration);
-        this.getStaminaToSet(toolStaminaCost);
-        this.setSwingStaminaCost(toolStaminaCost);
-        this.setSwinging(true);
+    private void modifyAttackSpeed() {
+        AttributeInstance attackSpeedAttribute = this.serverPlayer.getAttribute(Attributes.ATTACK_SPEED);
+        if (attackSpeedAttribute != null) {
+            if (this.stamina > 0.0f) {
+                if (attackSpeedAttribute.hasModifier(ATTACK_SPEED_MODIFIER)) {
+                    attackSpeedAttribute.removeModifier(ATTACK_SPEED_MODIFIER);
+                }
+
+                return;
+            }
+
+            var attackSpeed = attackSpeedAttribute.getValue();
+            var newAttackSpeed = attackSpeed * ServerConfigs.ATTACK_SPEED_REDUCTION_MULTIPLIER.get();
+
+            AttributeModifier modifiedAttackSpeed = new AttributeModifier(ATTACK_SPEED_MODIFIER, -newAttackSpeed, AttributeModifier.Operation.ADD_VALUE);
+            if (attackSpeedAttribute.hasModifier(ATTACK_SPEED_MODIFIER)) return;
+            attackSpeedAttribute.addPermanentModifier(modifiedAttackSpeed);
+            this.serverPlayer.resetAttackStrengthTicker();
+        }
+    }
+
+    private void swingTool() {
+
+        var currentSwingDuration = (int) serverPlayer.getCurrentItemAttackStrengthDelay();
+        var toolStaminaCost = StaminaUtils.calculateAttackStaminaCost(this.serverPlayer);
+        var staminaAfterRemove = this.getStaminaAfterRemove(toolStaminaCost);
+        this.setStamina(staminaAfterRemove);
+
+        // If the swing duration field hasn't been set yet, and stamina is 0, then set it to an arbitrary 20 to avoid headaches.
+        if (this.stamina <= 0) {
+            this.swingDuration = 20;
+            return;
+        }
+
+        // If the current swing duration is equal to the set swing duration field, then keep using the set swing duration.
+        if (this.swingDuration == currentSwingDuration) return;
+
+
+        this.swingDuration = (int) serverPlayer.getCurrentItemAttackStrengthDelay();
     }
 
     // TODO: Maybe just send the total amount of stamina cost to the client side and have that phantom amount remain
@@ -190,24 +187,9 @@ public class ServerStaminaData extends StaminaData {
     //       Also, have it to where the phantom amount doesn't tick down until the client stops receiving updates for
     //       at least a second or two, and if the client receives another update just pause the reduction (unless 0).
     //       That should keep the bar there and not have any wonky movement.
-
-    // TODO: ALSO, have the actual amount tick down gradually instead of suddenly, but still have it happen pretty fast.
-    //       Maybe divide the amount to remove by 10 ticks so it all can be processed in half a second? Test it out.
     public void blockAttack(float damageBlocked) {
-        this.getStaminaToSet(damageBlocked);
-    }
-
-    private void tickSwingDuration() {
-//        SimpleStamina.LOGGER.info("tick swing duration: {}", this.swingDuration);
-        if (this.swingDuration > 0  && this.stamina > 0) {
-            var staminaToSet = this.getStaminaToSet(this.swingStaminaCost);
-            this.setStamina(staminaToSet);
-            this.swingDuration--;
-        }
-        else {
-            this.setSwingStaminaCost(0);
-            this.setSwinging(false);
-        }
+        var staminaToSet = this.getStaminaAfterRemove(damageBlocked);
+        this.setStamina(staminaToSet);
     }
 
     public void saveNBTData(CompoundTag compoundTag, HolderLookup.Provider provider) {

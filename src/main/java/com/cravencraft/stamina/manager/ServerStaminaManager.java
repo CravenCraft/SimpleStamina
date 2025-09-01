@@ -11,40 +11,24 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
-
 public class ServerStaminaManager extends StaminaManager {
     public static final ResourceLocation ATTACK_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath(SimpleStamina.MODID, "attack_speed_modifier");
 
-    // TODO: Want to set this up to immediately set the client player's stamina to the server player's stamina.
-    //       Don't want to use addStamina(). Want to use setStamina().
     public void onPlayerJoin(ServerPlayer serverPlayer) {
         var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
-        SimpleStamina.LOGGER.info("Server player has joined. Syncing Stamina: {}.", serverStaminaData.getStamina());
         PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(serverStaminaData));
     }
 
     public void tick(ServerPlayer serverPlayer) {
         var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
-        SimpleStamina.LOGGER.info("SERVER MAX STAMINA: {} ATTRIBUTE MAX STAMINA: {}", serverStaminaData.getMaxStamina(), serverStaminaData.player.getAttributeValue(MAX_STAMINA));
         serverStaminaData.tickStamina();
 
         this.setExhaustionEffects(serverPlayer, serverStaminaData);
-
-        // Don't want to clog up the network if there are no updates server-side.
-        if (!serverStaminaData.shouldSendToClient()) return;
-
-        SimpleStamina.LOGGER.info("IS SENDING TO CLIENT");
-
-        PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(serverStaminaData));
-        serverStaminaData.setSendToClient(false);
     }
 
     public void playerJump(ServerPlayer serverPlayer) {
-        SimpleStamina.LOGGER.info("PLAYER IS JUMPING");
         var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
-        serverStaminaData.setPlayerJumped();
-//        this.tick(serverPlayer);
+        serverStaminaData.playerJump();
     }
 
     public void playerBlockAttack(ServerPlayer serverPlayer, float blockAmount) {
@@ -61,7 +45,7 @@ public class ServerStaminaManager extends StaminaManager {
     public void setExhaustionEffects(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
         var stamina = serverStaminaData.getStamina();
 
-        this.modifyAttackSpeed(serverPlayer, stamina);
+//        this.modifyAttackSpeed(serverPlayer, stamina);
         this.disableSprint(serverPlayer, stamina);
         this.disableSwim(serverPlayer, stamina);
     }

@@ -29,7 +29,6 @@ public class StaminaEvents {
         }
         else if (player instanceof LocalPlayer localPlayer) {
             SimpleStamina.CLIENT_STAMINA_MANAGER.clientTick(localPlayer);
-//            var clientPlayerStamina = CLIENT_STAMINA_DATA.getStamina();
         }
     }
 

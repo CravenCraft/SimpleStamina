@@ -39,7 +39,7 @@ public class SyncStaminaPacket implements CustomPacketPayload {
             if (ClientStaminaManager.getClientStaminaData() == null) {
                 SimpleStamina.LOGGER.info("CLIENT STAMINA IS NULL.");
                 if (Minecraft.getInstance().player != null) {
-                    ClientStaminaManager.onPlayerJoin(Minecraft.getInstance().player);
+                    ClientStaminaManager.onPlayerJoin(packet.playerStamina);
                 }
                 else {
                     SimpleStamina.LOGGER.info("CLIENT PLAYER IS NULL.");

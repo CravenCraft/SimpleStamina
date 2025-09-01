@@ -12,15 +12,14 @@ public class ClientStaminaManager extends StaminaManager {
         return clientStaminaData;
     }
 
-    public static void onPlayerJoin(LocalPlayer localPlayer) {
-        clientStaminaData = new ClientStaminaData(localPlayer);
+    public static void onPlayerJoin(int staminaFromServer) {
+        clientStaminaData = new ClientStaminaData(Minecraft.getInstance().player, staminaFromServer);
         SimpleStamina.LOGGER.info("Client player has joined. Syncing Stamina: {}.", clientStaminaData.getStamina());
     }
 
     public void clientTick(LocalPlayer localPlayer) {
         clientStaminaData.tickStamina();
         var playerStamina = clientStaminaData.getStamina();
-
 
         if (playerStamina > 0.0f) return;
 
@@ -40,5 +39,4 @@ public class ClientStaminaManager extends StaminaManager {
         Minecraft.getInstance().options.keySprint.setDown(false);
         localPlayer.setSprinting(false);
     }
-
 }
