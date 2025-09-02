@@ -15,7 +15,7 @@ public class ServerConfigs {
     public static final ModConfigSpec.ConfigValue<Double> JUMP_STAMINA_MULTIPLIER;
     public static final ModConfigSpec.ConfigValue<Double> ATTACK_STAMINA_MULTIPLIER;
     public static final ModConfigSpec.ConfigValue<Double> PULL_BOW_STAMINA_MULTIPLIER;
-    public static final ModConfigSpec.ConfigValue<Double> BLOCK_STAMINA_MULTIPLIER;
+    public static final ModConfigSpec.ConfigValue<Double> BLOCK_STAMINA_REDUCTION_MULTIPLIER;
     public static final ModConfigSpec.ConfigValue<Double> ATTACK_SPEED_REDUCTION_MULTIPLIER;
 
     public static final ModConfigSpec SPEC;
@@ -55,7 +55,7 @@ public class ServerConfigs {
         ATTACK_STAMINA_MULTIPLIER = BUILDER.define("attackStaminaMultiplier", 1.0D);
         BUILDER.comment("For both the bow and crossbow.");
         PULL_BOW_STAMINA_MULTIPLIER = BUILDER.define("pullBowStaminaMultiplier", 1.0D);
-        BLOCK_STAMINA_MULTIPLIER = BUILDER.define("blockStaminaMultiplier", 1.0D);
+        BLOCK_STAMINA_REDUCTION_MULTIPLIER = BUILDER.defineInRange("blockStaminaMultiplier", 1.0D, 0.0D, 1.0D);
         BUILDER.comment("Global multiplier for the attack speed reduction whenever a player is out of stamina. Default 0.75D (75%).");
         ATTACK_SPEED_REDUCTION_MULTIPLIER = BUILDER.defineInRange("attackSpeedReductionMultiplier", 0.75D, 0.0D, 1.0D);
         BUILDER.pop();

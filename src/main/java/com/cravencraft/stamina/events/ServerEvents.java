@@ -21,11 +21,11 @@ import java.io.InputStreamReader;
 @EventBusSubscriber(modid = SimpleStamina.MODID)
 public class ServerEvents {
     // TODO: Everything is setup to add armors and tools for stamina. Just need to implement it now.
-    public static final String ARMOR_PATH = "stamina_cost/armor";
-    public static final String MELEE_WEAPON_PATH = "stamina_cost/melee_weapons";
-    public static final String RANGED_WEAPON_PATH = "stamina_cost/ranged_weapons";
-    public static final String SHIELD_PATH = "stamina_cost/shields";
-    public static final String TOOL_PATH = "stamina_cost/tools";
+    public static final String ARMOR_PATH = "stamina_item_values/armor";
+    public static final String MELEE_WEAPON_PATH = "stamina_item_values/melee_weapons";
+    public static final String RANGED_WEAPON_PATH = "stamina_item_values/ranged_weapons";
+    public static final String SHIELD_PATH = "stamina_item_values/shields";
+    public static final String TOOL_PATH = "stamina_item_values/tools";
 
     /**
      * Reads datapacks & saves stamina overrides for items in a Map object, which will be used to override
@@ -39,46 +39,6 @@ public class ServerEvents {
         loadCertainDatapackStaminaValue(MELEE_WEAPON_PATH, resourceManager);
         loadCertainDatapackStaminaValue(RANGED_WEAPON_PATH, resourceManager);
         loadCertainDatapackStaminaValue(SHIELD_PATH, resourceManager);
-//
-//        for (var listEntry: resourceManager.listResourceStacks("stamina_cost/melee_weapons",
-//                (fileName) -> fileName.getPath().endsWith(".json")).entrySet()) {
-//            String nameSpace = listEntry.getKey().getNamespace();
-//
-//            SimpleStamina.LOGGER.info("server datapack namespace: {} | path: {}", nameSpace, listEntry.getKey().getPath());
-//
-//
-//        }
-//
-//        for (Map.Entry<ResourceLocation, List<Resource>> resourceLocationListEntry : resourceManager.listResourceStacks("stamina_cost",
-//                (fileName) -> fileName.getPath().endsWith(".json")).entrySet()) {
-//            String nameSpace = resourceLocationListEntry.getKey().getNamespace();
-//
-//            for (Resource resource : resourceLocationListEntry.getValue()) {
-//                JsonReader staminaReader = new JsonReader(new InputStreamReader(resource.open()));
-//                try {
-//                    JsonArray staminaItems = JsonParser.parseReader(staminaReader).getAsJsonArray();
-//
-//                    for (JsonElement staminaItem : staminaItems) {
-//                        if (staminaItem.isJsonObject()) {
-//                            JsonObject itemAttributes = staminaItem.getAsJsonObject();
-//                            if (itemAttributes.has("stamina_cost")) {
-//                                String type = (itemAttributes.has("type")) ? itemAttributes.get("type").getAsString() : "placeholder";
-//                                String itemId = (itemAttributes.has("name")) ? itemAttributes.get("name").getAsString() : "placeholder";
-//                                double staminaCost = (itemAttributes.has("stamina_cost")) ? itemAttributes.get("stamina_cost").getAsDouble() : 0;
-//
-//                                itemId = nameSpace.concat(".").concat(itemId);
-//
-//                                DatapackRegistry.addDataPackStaminaValues(type, itemId, staminaCost);
-//                            }
-//                        }
-//                    }
-//                } catch (IllegalStateException e) {
-//                    SimpleStamina.LOGGER.error("ERROR: {}. The JSON object {} isn't properly configured.", e, resourceLocationListEntry.getKey());
-//                }
-//
-//                staminaReader.close();
-//            }
-//        }
     }
 
     private static void loadCertainDatapackStaminaValue(String type, ResourceManager resourceManager) throws IOException {
@@ -95,9 +55,9 @@ public class ServerEvents {
                     for (JsonElement staminaItem : staminaItems) {
                         if (staminaItem.isJsonObject()) {
                             JsonObject itemAttributes = staminaItem.getAsJsonObject();
-                            if (itemAttributes.has("stamina_cost")) {
+                            if (itemAttributes.has("stamina_cost") || itemAttributes.has("stamina_reduction_percentage")) {
                                 String itemId = (itemAttributes.has("name")) ? itemAttributes.get("name").getAsString() : "placeholder";
-                                double staminaCost = (itemAttributes.has("stamina_cost")) ? itemAttributes.get("stamina_cost").getAsDouble() : 0;
+                                double staminaCost = (itemAttributes.has("stamina_cost")) ? itemAttributes.get("stamina_cost").getAsDouble() : itemAttributes.get("stamina_reduction_percentage").getAsDouble();
 
                                 itemId = nameSpace.concat(".").concat(itemId);
 

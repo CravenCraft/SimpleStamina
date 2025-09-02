@@ -1,10 +1,13 @@
 package com.cravencraft.stamina.utils;
 
+import com.cravencraft.stamina.SimpleStamina;
 import com.cravencraft.stamina.config.ServerConfigs;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ShieldItem;
 
 import static com.cravencraft.stamina.registries.AttributeRegistry.*;
 import static com.cravencraft.stamina.registries.DatapackRegistry.MELEE_WEAPONS_STAMINA_VALUES;
+import static com.cravencraft.stamina.registries.DatapackRegistry.SHIELD_STAMINA_VALUES;
 
 public class StaminaUtils {
     public static float calculateStaminaRegenIncrement(ServerPlayer serverPlayer) {
@@ -34,6 +37,26 @@ public class StaminaUtils {
                        ServerConfigs.JUMP_STAMINA_MULTIPLIER.get().floatValue();
     }
 
+
+    public static float calculateBlockStaminaCost(ServerPlayer serverPlayer, float damageBlocked) {
+        SimpleStamina.LOGGER.info("initial block cost so far: {}", damageBlocked);
+        var blockCostReduction = 1 - serverPlayer.getAttributeValue(BLOCK_STAMINA_COST_REDUCTION);
+        var blockStaminaCost = damageBlocked * blockCostReduction;
+
+        var shieldItem = serverPlayer.getUseItem().getDescriptionId().replace("item.", "");
+
+
+        if (SHIELD_STAMINA_VALUES.containsKey(shieldItem)) {
+            var shieldBlockReduction = SHIELD_STAMINA_VALUES.get(shieldItem).floatValue();
+            blockStaminaCost = blockStaminaCost * (1 - (shieldBlockReduction * .01f));
+        }
+
+        blockStaminaCost *= ServerConfigs.BLOCK_STAMINA_REDUCTION_MULTIPLIER.get().floatValue();
+
+        return (float) blockStaminaCost;
+
+    }
+
     // TODO: Later, add some attributes to modify the attack stamina cost, which can be something like an attribute
     //       that can be leveled up to decrease attack stamina cost by a percentage (similar to the regen rate attribute).
     public static float calculateAttackStaminaCost(ServerPlayer serverPlayer) {
@@ -48,5 +71,4 @@ public class StaminaUtils {
 
         return attackStaminaCost;
     }
-
 }

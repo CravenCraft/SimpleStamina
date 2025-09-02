@@ -38,8 +38,8 @@ public class AttributeRegistry {
     public static DeferredHolder<Attribute, Attribute> PULL_BOW_STAMINA_COST = ATTRIBUTES.register("pull_bow_stamina_cost", () -> (
             new RangedAttribute("attribute.simple_stamina.pull_bow_stamina_cost", 1.0D, 0.0D, 100.0D).setSyncable(true)
     ));
-    public static DeferredHolder<Attribute, Attribute> BLOCK_STAMINA_COST = ATTRIBUTES.register("block_stamina_cost", () -> (
-            new RangedAttribute("attribute.simple_stamina.block_stamina_cost", 1.0D, 0.0D, 100.0D).setSyncable(true)
+    public static DeferredHolder<Attribute, Attribute> BLOCK_STAMINA_COST_REDUCTION = ATTRIBUTES.register("block_stamina_cost_reduction", () -> (
+            new RangedAttribute("attribute.simple_stamina.block_stamina_cost_reduction", 0.0D, 0.0D, 100.0D).setSyncable(true)
     ));
 
     public static void register(IEventBus eventBus) { ATTRIBUTES.register(eventBus); }

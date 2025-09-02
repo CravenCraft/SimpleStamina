@@ -189,7 +189,8 @@ public class ServerStaminaData extends StaminaData {
     //       at least a second or two, and if the client receives another update just pause the reduction (unless 0).
     //       That should keep the bar there and not have any wonky movement.
     public void blockAttack(float damageBlocked) {
-        var staminaToSet = this.getStaminaAfterRemove(damageBlocked);
+        var staminaCost = StaminaUtils.calculateBlockStaminaCost(this.serverPlayer, damageBlocked);
+        var staminaToSet = this.getStaminaAfterRemove(staminaCost);
         if (staminaToSet == 0.0f) this.serverPlayer.disableShield();
         this.setStamina(staminaToSet);
     }
