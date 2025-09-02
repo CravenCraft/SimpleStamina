@@ -9,7 +9,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import static com.cravencraft.stamina.registries.DatapackRegistry.RANGED_WEAPONS_STAMINA_VALUES;
 
 public class ServerStaminaManager extends StaminaManager {
     public static final ResourceLocation ATTACK_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath(SimpleStamina.MODID, "attack_speed_modifier");
@@ -78,5 +81,14 @@ public class ServerStaminaManager extends StaminaManager {
             attackSpeedAttribute.addPermanentModifier(modifiedAttackSpeed);
             serverPlayer.resetAttackStrengthTicker();
         }
+    }
+
+    public boolean shouldCancelBowDraw(ServerPlayer serverPlayer, ItemStack itemStack) {
+        var serverPlayerStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
+        if (serverPlayerStaminaData.getStamina() > 0) return false;
+
+        var weaponId = serverPlayer.getUseItem().getDescriptionId().replace("item.", "");
+
+        return RANGED_WEAPONS_STAMINA_VALUES.containsKey(weaponId);
     }
 }

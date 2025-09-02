@@ -60,6 +60,7 @@ public class ServerStaminaData extends StaminaData {
         this.tickSprintStaminaCost();
         this.tickSwimStaminaCost();
         this.tickAttackStaminaCost();
+        this.tickRangedAttackStaminaCost();
     }
 
     public void setStamina(float stamina) {
@@ -117,6 +118,14 @@ public class ServerStaminaData extends StaminaData {
         if (!this.serverPlayer.isSwimming()) return;
 
         var staminaCost = StaminaUtils.calculateSwimStaminaCost(this.serverPlayer);
+        var staminaToSet = this.getStaminaAfterRemove(staminaCost);
+        this.setStamina(staminaToSet);
+    }
+
+    private void tickRangedAttackStaminaCost() {
+        if (!this.serverPlayer.isUsingItem() || this.stamina <= 0) return;
+
+        var staminaCost = StaminaUtils.calculateDrawBowStaminaCost(this.serverPlayer);
         var staminaToSet = this.getStaminaAfterRemove(staminaCost);
         this.setStamina(staminaToSet);
     }

@@ -6,8 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ShieldItem;
 
 import static com.cravencraft.stamina.registries.AttributeRegistry.*;
-import static com.cravencraft.stamina.registries.DatapackRegistry.MELEE_WEAPONS_STAMINA_VALUES;
-import static com.cravencraft.stamina.registries.DatapackRegistry.SHIELD_STAMINA_VALUES;
+import static com.cravencraft.stamina.registries.DatapackRegistry.*;
 
 public class StaminaUtils {
     public static float calculateStaminaRegenIncrement(ServerPlayer serverPlayer) {
@@ -70,5 +69,18 @@ public class StaminaUtils {
         attackStaminaCost *= ServerConfigs.ATTACK_STAMINA_MULTIPLIER.get().floatValue();
 
         return attackStaminaCost;
+    }
+
+    public static float calculateDrawBowStaminaCost(ServerPlayer serverPlayer) {
+        var drawStaminaCost = (float) serverPlayer.getAttributeValue(PULL_BOW_STAMINA_COST);
+        var weaponId = serverPlayer.getUseItem().getDescriptionId().replace("item.", "");
+
+        if (RANGED_WEAPONS_STAMINA_VALUES.containsKey(weaponId)) {
+            drawStaminaCost = RANGED_WEAPONS_STAMINA_VALUES.get(weaponId).floatValue();
+        }
+
+        drawStaminaCost *= ServerConfigs.PULL_BOW_STAMINA_MULTIPLIER.get().floatValue();
+
+        return drawStaminaCost;
     }
 }

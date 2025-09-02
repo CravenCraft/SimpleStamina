@@ -1,10 +1,10 @@
 [
   {
     "name": "bow",
-    "stamina_cost": 3
+    "stamina_cost": 0.1
   },
   {
     "name": "crossbow",
-    "stamina_cost": 5
+    "stamina_cost": 0.25
   }
 ]
