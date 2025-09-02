@@ -140,6 +140,7 @@ public class ServerStaminaData extends StaminaData {
         }
     }
 
+    // TODO: Add an attribute modifier to reduce knockback as well.
     private void modifyAttackSpeed() {
         AttributeInstance attackSpeedAttribute = this.serverPlayer.getAttribute(Attributes.ATTACK_SPEED);
         if (attackSpeedAttribute != null) {
@@ -189,6 +190,7 @@ public class ServerStaminaData extends StaminaData {
     //       That should keep the bar there and not have any wonky movement.
     public void blockAttack(float damageBlocked) {
         var staminaToSet = this.getStaminaAfterRemove(damageBlocked);
+        if (staminaToSet == 0.0f) this.serverPlayer.disableShield();
         this.setStamina(staminaToSet);
     }
 

@@ -1,6 +1,7 @@
 package com.cravencraft.stamina.events;
 
 import com.cravencraft.stamina.SimpleStamina;
+import com.cravencraft.stamina.capability.ServerStaminaData;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -34,17 +35,14 @@ public class StaminaEvents {
 
     /**
      * Fires whenever the player attempts to block an attack. Fires even if the block attempt fails (block too late).
-     *
+     * TODO: Setup the shield datapack json values to store a float/double value that represents the amount of stamina
+     *       taken to block that is reduced. Holding a shield should slow stamina regen by half, and blocking should
+     *       always cost the amount blocked and knockback multiplied by the reduction amount (and other configs/attributes).
      * @param event
      */
     @SubscribeEvent
     public static void onPlayerBlock(LivingShieldBlockEvent event) {
         if (event.getBlocked() && event.getEntity() instanceof ServerPlayer serverPlayer) {
-
-            SimpleStamina.LOGGER.info("player blocked: {}", event.getBlocked());
-            SimpleStamina.LOGGER.info("original blocked damage: {}", event.getOriginalBlockedDamage());
-            SimpleStamina.LOGGER.info("blocked damage: {}", event.getBlockedDamage());
-            SimpleStamina.LOGGER.info("shield damage: {}", event.shieldDamage());
             SimpleStamina.SERVER_STAMINA_MANAGER.playerBlockAttack(serverPlayer, event.getBlockedDamage());
         }
     }

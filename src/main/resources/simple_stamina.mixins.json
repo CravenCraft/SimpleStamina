@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.cravencraft.stamina.mixin",
+  "refmap": "simple_stamina.refmap.json",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.cravencraft.stamina.mixin.MixinPlugin",
+  "mixins": [
+    "LivingEntityMixin"
+  ],
+  "client": [
+
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8"
+}
