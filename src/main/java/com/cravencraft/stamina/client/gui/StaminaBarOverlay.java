@@ -3,20 +3,24 @@ package com.cravencraft.stamina.client.gui;
 import com.cravencraft.stamina.SimpleStamina;
 import com.cravencraft.stamina.config.ClientConfigs;
 import com.cravencraft.stamina.manager.ClientStaminaManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
 
 import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
 
 public class StaminaBarOverlay implements LayeredDraw.Layer {
     private static final StaminaBarOverlay instance = new StaminaBarOverlay();
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(SimpleStamina.MODID, "textures/gui/icons.png");
+    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(SimpleStamina.MODID, "textures/gui/stamina_bar.png");
 
     public enum Display {
         Never,
@@ -33,9 +37,17 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         BottomRight
     }
 
-    static final int DEFAULT_IMAGE_WIDTH = 98;
+
+//    static final int DEFAULT_IMAGE_WIDTH = 98;
+//    static final int IMAGE_HEIGHT = 21;
+
+    static final int DEFAULT_IMAGE_WIDTH = 71;
     static final int XP_IMAGE_WIDTH = 188;
-    static final int IMAGE_HEIGHT = 21;
+    static final int IMAGE_HEIGHT = 15;
+
+    static final int IMAGE_FILLED_STAMINA_WIDTH = 67;
+    static final int IMAGE_FILLED_STAMINA_HEIGHT = 19;
+
     static final int HOTBAR_HEIGHT = 25;
     static final int ICON_ROW_HEIGHT = 11;
     static final int CHAR_WIDTH = 6;
@@ -73,23 +85,43 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         int barY = getBarY(anchor, screenHeight, Minecraft.getInstance().gui) - configOffsetY;
 
         int imageWidth = DEFAULT_IMAGE_WIDTH;
+        int imageHeight = IMAGE_HEIGHT;
         int spriteX = 0;
         int spriteY = 0;
 
-        guiGraphics.blit(TEXTURE, barX, barY, spriteX, spriteY, imageWidth, IMAGE_HEIGHT, 256, 256);
-        guiGraphics.blit(TEXTURE, barX, barY, spriteX, spriteY + IMAGE_HEIGHT, (int) (imageWidth * Math.min((stamina / (double) maxStamina), 1)), IMAGE_HEIGHT);
+        customGraphicsRenderer(guiGraphics, barX, barY, spriteX, spriteY, imageWidth, imageHeight, 256, 256);
+        guiGraphics.setColor(0.0f, 1.0f, 0.0f, 1.0f);
+        // TODO: Probably want to modify the stamina bar that drains so that the last bit doesn't get removed until the user is at absolute 0 on stamina.
+        customGraphicsRenderer(guiGraphics, barX, barY, spriteX, spriteY + imageHeight, (int) (imageWidth * Math.min((stamina / (double) maxStamina), 1)), imageHeight,  256, 256);
+
+        guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
 
         if (ClientConfigs.STAMINA_BAR_TEXT_VISIBLE.get()) {
             int textX = ClientConfigs.STAMINA_TEXT_X_OFFSET.get() + barX + imageWidth / 2 - (int) ((("" + stamina).length() + 0.5) * CHAR_WIDTH);
             int textY = ClientConfigs.STAMINA_TEXT_Y_OFFSET.get() + barY + ICON_ROW_HEIGHT;
             String staminaFraction = (stamina) + "/" + maxStamina;
-
+//            guiGraphics.pose().pushPose();
             guiGraphics.drawString(Minecraft.getInstance().font, staminaFraction, textX, textY, TEXT_COLOR);
         }
     }
 
-    private static void drawStaminaBarText() {
+    private static void customGraphicsRenderer(GuiGraphics guiGraphics, float barMinX, float barMinY, float textureOffsetX, float textureOffsetY, float textureWidth, float textureHeight, float textureTotalWidth, float textureTotalHeight) {
+        var barMaxX = barMinX + textureWidth;
+        var barMaxY = barMinY + textureHeight;
+        var minSpriteX = (textureOffsetX + 0.0F) / textureTotalWidth;
+        var minSpriteY = (textureOffsetY + 0.0F) / textureTotalHeight;
+        var maxSpriteX = (textureOffsetX + textureWidth) / textureTotalWidth;
+        var maxSpriteY = (textureOffsetY + textureHeight) / textureTotalHeight;
 
+        RenderSystem.setShaderTexture(0, TEXTURE);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        Matrix4f matrix4f = guiGraphics.pose().last().pose();
+        BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        bufferBuilder.addVertex(matrix4f, barMinX, barMinY, 0).setColor(255, 1, 1, 255).setUv(minSpriteX, minSpriteY);
+        bufferBuilder.addVertex(matrix4f, barMinX, barMaxY, 0).setColor(255, 1, 1, 255).setUv(minSpriteX, maxSpriteY);
+        bufferBuilder.addVertex(matrix4f, barMaxX, barMaxY, 0).setColor(255, 1, 1, 255).setUv(maxSpriteX, maxSpriteY);
+        bufferBuilder.addVertex(matrix4f, barMaxX, barMinY, 0).setColor(255, 1, 1, 255).setUv(maxSpriteX, minSpriteY);
+        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
     }
 
     public static boolean shouldShowStaminaBar(LocalPlayer player, int stamina) {

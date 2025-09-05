@@ -87,8 +87,6 @@ public class ClientStaminaManager extends StaminaManager {
         localPlayer.setSwimming(false);
     }
 
-    // TODO: Still have to work on this some. Need to disable the item indefinitely until stamina is above 0. Maybe
-    //          Mixin to whatever method enabled the field startUsingItem?
     private void disableRangedWeaponUse() {
         if (!TOGGLE_RANGED_ATTACK_STAMINA.get()) return;
 
