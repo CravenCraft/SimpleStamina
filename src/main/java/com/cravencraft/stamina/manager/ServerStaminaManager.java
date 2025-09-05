@@ -4,6 +4,7 @@ import com.cravencraft.stamina.SimpleStamina;
 import com.cravencraft.stamina.capability.ServerStaminaData;
 import com.cravencraft.stamina.config.ServerConfigs;
 import com.cravencraft.stamina.network.SyncStaminaPacket;
+import com.cravencraft.stamina.utils.StaminaUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import static com.cravencraft.stamina.config.ServerConfigs.*;
 import static com.cravencraft.stamina.registries.DatapackRegistry.RANGED_WEAPONS_STAMINA_VALUES;
 
 public class ServerStaminaManager extends StaminaManager {
@@ -24,19 +26,93 @@ public class ServerStaminaManager extends StaminaManager {
 
     public void tick(ServerPlayer serverPlayer) {
         var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
-        serverStaminaData.tickStamina();
+
+        // TODO: Maybe setup a tick increment here, and factor that in to how much is drained
+        //       from the below methods. Should be straightforward. Larger tick increments = more choppy bar movement,
+        //       but less network traffic.
+        // TODO: Add the separate ticks here. THIS IS WHERE YOU GO TO. REMOVE THE tickStamina METHOD FROM THIS CLASS
+        //      AND JUST ADD THE TICKS FROM THE ServerStaminaData CLASS TO HERE SO YOU CAN ADD THE TOGGLES AND SEPARATE
+        //      THE RESPONSIBILITIES OF THE DATA CLASS.
+        this.tickStaminaRegen(serverPlayer, serverStaminaData);
+
+        this.tickSprintStaminaCost(serverPlayer, serverStaminaData);
+        this.tickSwimStaminaCost(serverPlayer, serverStaminaData);
+        this.tickAttackStaminaCost(serverPlayer, serverStaminaData);
 
         this.setExhaustionEffects(serverPlayer, serverStaminaData);
     }
 
+    public void tickSprintStaminaCost(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
+        if (!TOGGLE_SPRINT_STAMINA.get() || !serverPlayer.isSprinting()) return;
+
+        var staminaCost = StaminaUtils.calculateSprintStaminaCost(serverPlayer);
+        var staminaToSet = serverStaminaData.getStaminaAfterRemove(staminaCost);
+        serverStaminaData.setStamina(staminaToSet);
+    }
+
+    public void tickSwimStaminaCost(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
+        if (!TOGGLE_SWIM_STAMINA.get() || !serverPlayer.isSwimming()) return;
+
+        var staminaCost = StaminaUtils.calculateSwimStaminaCost(serverPlayer);
+        var staminaToSet = serverStaminaData.getStaminaAfterRemove(staminaCost);
+        serverStaminaData.setStamina(staminaToSet);
+    }
+
+    // TODO: Maybe just send the total amount of stamina cost to the client side and have that phantom amount remain
+    //       and tick down from the client like in dark souls. Will clog the network up less, and will put less
+    //       calculations on the server. Also, it'll be converted to an integer client side, so it'll be even easier.
+    //       Also, have it to where the phantom amount doesn't tick down until the client stops receiving updates for
+    //       at least a second or two, and if the client receives another update just pause the reduction (unless 0).
+    //       That should keep the bar there and not have any wonky movement.
+    public void tickAttackStaminaCost(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
+        if (!TOGGLE_MELEE_ATTACK_STAMINA.get()) return;
+
+        if (serverStaminaData.getSwingTick() < serverStaminaData.getSwingDuration()) {
+            serverStaminaData.setSwingTick(serverStaminaData.getSwingTick() + 1);
+        }
+        // For whatever reason the player is swinging when they're sleeping? Have to account for that here.
+        else if (serverPlayer.swinging && !serverPlayer.isSleeping()) {
+            serverStaminaData.setSwingTick(0);
+            this.modifyAttackSpeed(serverPlayer, serverStaminaData.getStamina());
+            this.swingTool(serverPlayer, serverStaminaData);
+        }
+    }
+
     public void playerJump(ServerPlayer serverPlayer) {
+        if (!TOGGLE_JUMP_STAMINA.get()) return;
+
         var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
-        serverStaminaData.playerJump();
+        var staminaCost = StaminaUtils.calculateJumpStaminaCost(serverPlayer);
+        var staminaToSet = serverStaminaData.getStaminaAfterRemove(staminaCost);
+        serverStaminaData.setStamina(staminaToSet);
     }
 
     public void playerBlockAttack(ServerPlayer serverPlayer, float blockAmount) {
+        if (!TOGGLE_BLOCK_ATTACK_STAMINA.get()) return;
+
         var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
-        serverStaminaData.blockAttack(blockAmount);
+        var staminaCost = StaminaUtils.calculateBlockStaminaCost(serverPlayer, blockAmount);
+        var staminaToSet = serverStaminaData.getStaminaAfterRemove(staminaCost);
+        if (staminaToSet == 0.0f) serverPlayer.disableShield();
+        serverStaminaData.setStamina(staminaToSet);
+    }
+
+    // TODO: Should probably set delay ticks here. Like every 5 ticks maybe.
+    // TODO: Still have to work on this some. Need to disable the item indefinitely until stamina is above 0. Maybe
+    //          Mixin to whatever method enabled the field startUsingItem?
+    public void useRangedWeapon(ServerPlayer serverPlayer, ItemStack itemStack) {
+        var serverPlayerStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
+
+        if (StaminaUtils.getDataPackItemValue(RANGED_WEAPONS_STAMINA_VALUES, itemStack) == 0) return;
+
+        if (serverPlayerStaminaData.getStamina() <= 0) {
+            serverPlayer.stopUsingItem();
+            return;
+        }
+
+        var staminaCost = StaminaUtils.calculateDrawBowStaminaCost(serverPlayer, itemStack);
+        var staminaToSet = serverPlayerStaminaData.getStaminaAfterRemove(staminaCost);
+        serverPlayerStaminaData.setStamina(staminaToSet);
     }
 
     /**
@@ -45,22 +121,48 @@ public class ServerStaminaManager extends StaminaManager {
      * @param serverPlayer
      * @param serverStaminaData
      */
-    public void setExhaustionEffects(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
+    private void setExhaustionEffects(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
         var stamina = serverStaminaData.getStamina();
 
-//        this.modifyAttackSpeed(serverPlayer, stamina);
-        this.disableSprint(serverPlayer, stamina);
-        this.disableSwim(serverPlayer, stamina);
+        if (stamina > 0.0f) return;
+
+        this.disableSprint(serverPlayer);
+        this.disableSwim(serverPlayer);
     }
 
-    public void disableSprint(ServerPlayer serverPlayer, float stamina) {
-        if (stamina > 0.0f) return;
-        if (serverPlayer.isSprinting()) serverPlayer.setSprinting(false);
+    private void disableSprint(ServerPlayer serverPlayer) {
+        if (!TOGGLE_SPRINT_STAMINA.get() || !serverPlayer.isSprinting()) return;
+
+        serverPlayer.setSprinting(false);
     }
 
-    public void disableSwim(ServerPlayer serverPlayer, float stamina) {
-        if (stamina > 0.0f) return;
-        if (serverPlayer.isSwimming()) serverPlayer.setSwimming(false);
+    private void disableSwim(ServerPlayer serverPlayer) {
+        if (!TOGGLE_SWIM_STAMINA.get() || !serverPlayer.isSwimming()) return;
+
+        serverPlayer.setSwimming(false);
+    }
+
+    private void tickStaminaRegen(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
+        if (!doStaminaRegen(serverStaminaData) || serverStaminaData.getStamina() == serverStaminaData.getMaxStamina())
+            return;
+
+        var increment = StaminaUtils.calculateStaminaRegenIncrement(serverPlayer);
+
+        var staminaToSet = serverStaminaData.getStaminaAfterAdd(increment);
+        serverStaminaData.setStamina(staminaToSet);
+    }
+
+    private boolean doStaminaRegen(ServerStaminaData serverStaminaData) {
+        if (serverStaminaData.getStamina() < serverStaminaData.getMaxStamina()) {
+            if (STAMINA_REGEN_COOLDOWN > 0) {
+                STAMINA_REGEN_COOLDOWN--;
+            }
+
+            return STAMINA_REGEN_COOLDOWN == 0;
+        }
+        else {
+            return false;
+        }
     }
 
     private void modifyAttackSpeed(ServerPlayer serverPlayer, float stamina) {
@@ -70,6 +172,7 @@ public class ServerStaminaManager extends StaminaManager {
                 if (attackSpeedAttribute.hasModifier(ATTACK_SPEED_MODIFIER)) {
                     attackSpeedAttribute.removeModifier(ATTACK_SPEED_MODIFIER);
                 }
+
                 return;
             }
 
@@ -83,12 +186,23 @@ public class ServerStaminaManager extends StaminaManager {
         }
     }
 
-    public boolean shouldCancelBowDraw(ServerPlayer serverPlayer, ItemStack itemStack) {
-        var serverPlayerStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
-        if (serverPlayerStaminaData.getStamina() > 0) return false;
+    private void swingTool(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
 
-        var weaponId = serverPlayer.getUseItem().getDescriptionId().replace("item.", "");
+        var currentSwingDuration = (int) serverPlayer.getCurrentItemAttackStrengthDelay();
+        var toolStaminaCost = StaminaUtils.calculateAttackStaminaCost(serverPlayer);
+        var staminaAfterRemove = serverStaminaData.getStaminaAfterRemove(toolStaminaCost);
+        serverStaminaData.setStamina(staminaAfterRemove);
 
-        return RANGED_WEAPONS_STAMINA_VALUES.containsKey(weaponId);
+        // If the swing duration field hasn't been set yet, and stamina is 0, then set it to an arbitrary 20 to avoid headaches.
+        if (serverStaminaData.getStamina() <= 0) {
+            serverStaminaData.setSwingDuration(20);
+            return;
+        }
+
+        // If the current swing duration is equal to the set swing duration field, then keep using the set swing duration.
+        if (serverStaminaData.getSwingDuration() == currentSwingDuration) return;
+
+
+        serverStaminaData.setSwingDuration((int) serverPlayer.getCurrentItemAttackStrengthDelay());
     }
 }

@@ -4,6 +4,8 @@ import com.cravencraft.stamina.SimpleStamina;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 
+import static com.cravencraft.stamina.manager.StaminaManager.STAMINA_REGEN_TICKS;
+import static com.cravencraft.stamina.manager.StaminaManager.STAMINA_REGEN_COOLDOWN;
 import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
 
 /**
@@ -14,10 +16,10 @@ import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
  *       then sent to the local player for various things such as displaying the GUI and such (GUI might be diff class).
  */
 public abstract class StaminaData {
-
-    /** Static fields for stamina regen ticks */
-    public static final int STAMINA_REGEN_TICKS = 60; // TODO: Probably wanna have this as a server config.
-    public static int STAMINA_REGEN_COOLDOWN = 0;
+//
+//    /** Static fields for stamina regen ticks */
+//    public static final int STAMINA_REGEN_TICKS = 60; // TODO: Probably wanna have this as a server config.
+//    public static int STAMINA_REGEN_COOLDOWN = 0;
 
     private boolean isMob;
     protected int maxStamina;
@@ -40,7 +42,7 @@ public abstract class StaminaData {
         SimpleStamina.LOGGER.info("max stamina set: {}", this.maxStamina);
     }
 
-    public abstract void tickStamina();
+//    public abstract void tickStamina();
 
     public int getMaxStamina() {
         return this.maxStamina;

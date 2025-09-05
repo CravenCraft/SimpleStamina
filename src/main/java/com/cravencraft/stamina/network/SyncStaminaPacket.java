@@ -46,7 +46,7 @@ public class SyncStaminaPacket implements CustomPacketPayload {
                 }
             }
             else {
-                ClientStaminaManager.getClientStaminaData().setStaminFromServer(packet.playerStamina);
+                ClientStaminaManager.setStaminaFromServer(packet.playerStamina);
             }
         });
     }

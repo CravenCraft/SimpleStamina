@@ -1,16 +1,14 @@
 package com.cravencraft.stamina.events;
 
 import com.cravencraft.stamina.SimpleStamina;
-import com.cravencraft.stamina.capability.ServerStaminaData;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.BowItem;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
 import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 @EventBusSubscriber(modid = SimpleStamina.MODID)
@@ -30,8 +28,8 @@ public class StaminaEvents {
         if (player instanceof ServerPlayer serverPlayer) {
             SimpleStamina.SERVER_STAMINA_MANAGER.tick(serverPlayer);
         }
-        else if (player instanceof LocalPlayer localPlayer) {
-            SimpleStamina.CLIENT_STAMINA_MANAGER.clientTick(localPlayer);
+        else if (player instanceof LocalPlayer) {
+            SimpleStamina.CLIENT_STAMINA_MANAGER.clientTick();
         }
     }
 
@@ -55,11 +53,10 @@ public class StaminaEvents {
     }
 
     @SubscribeEvent
-    public static void cancelBowDraw(PlayerInteractEvent.RightClickItem event) {
-        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            var isPlayerStaminaDepleted = SimpleStamina.SERVER_STAMINA_MANAGER.shouldCancelBowDraw(serverPlayer, event.getItemStack());
-
-            event.setCanceled(isPlayerStaminaDepleted);
+    public static void onPlayerUseItem(LivingEntityUseItemEvent event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer && event.getDuration() > 0) {
+            SimpleStamina.LOGGER.info("how long have you been using the item: {}", event.getDuration());
+            SimpleStamina.SERVER_STAMINA_MANAGER.useRangedWeapon(serverPlayer, event.getItem());
         }
     }
 }

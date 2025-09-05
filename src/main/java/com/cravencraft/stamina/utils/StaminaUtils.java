@@ -3,7 +3,9 @@ package com.cravencraft.stamina.utils;
 import com.cravencraft.stamina.SimpleStamina;
 import com.cravencraft.stamina.config.ServerConfigs;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ShieldItem;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.HashMap;
 
 import static com.cravencraft.stamina.registries.AttributeRegistry.*;
 import static com.cravencraft.stamina.registries.DatapackRegistry.*;
@@ -41,14 +43,8 @@ public class StaminaUtils {
         SimpleStamina.LOGGER.info("initial block cost so far: {}", damageBlocked);
         var blockCostReduction = 1 - serverPlayer.getAttributeValue(BLOCK_STAMINA_COST_REDUCTION);
         var blockStaminaCost = damageBlocked * blockCostReduction;
-
-        var shieldItem = serverPlayer.getUseItem().getDescriptionId().replace("item.", "");
-
-
-        if (SHIELD_STAMINA_VALUES.containsKey(shieldItem)) {
-            var shieldBlockReduction = SHIELD_STAMINA_VALUES.get(shieldItem).floatValue();
-            blockStaminaCost = blockStaminaCost * (1 - (shieldBlockReduction * .01f));
-        }
+        var shieldBlockReduction = getDataPackItemValue(SHIELD_STAMINA_VALUES, serverPlayer.getMainHandItem());
+        blockStaminaCost = blockStaminaCost * (1 - shieldBlockReduction * .01f);
 
         blockStaminaCost *= ServerConfigs.BLOCK_STAMINA_REDUCTION_MULTIPLIER.get().floatValue();
 
@@ -60,27 +56,27 @@ public class StaminaUtils {
     //       that can be leveled up to decrease attack stamina cost by a percentage (similar to the regen rate attribute).
     public static float calculateAttackStaminaCost(ServerPlayer serverPlayer) {
         var attackStaminaCost = (float) serverPlayer.getAttributeValue(ATTACK_STAMINA_COST);
-        var attackWeaponId = serverPlayer.getMainHandItem().getDescriptionId().replace("item.", "");
-
-        if (MELEE_WEAPONS_STAMINA_VALUES.containsKey(attackWeaponId)) {
-            attackStaminaCost = MELEE_WEAPONS_STAMINA_VALUES.get(attackWeaponId).floatValue();
-        }
+        var dataPackItemValue = getDataPackItemValue(MELEE_WEAPONS_STAMINA_VALUES, serverPlayer.getMainHandItem());
+        attackStaminaCost = (dataPackItemValue > 0) ? dataPackItemValue : attackStaminaCost;
 
         attackStaminaCost *= ServerConfigs.ATTACK_STAMINA_MULTIPLIER.get().floatValue();
 
         return attackStaminaCost;
     }
 
-    public static float calculateDrawBowStaminaCost(ServerPlayer serverPlayer) {
+    public static float calculateDrawBowStaminaCost(ServerPlayer serverPlayer, ItemStack rangedWeapon) {
         var drawStaminaCost = (float) serverPlayer.getAttributeValue(PULL_BOW_STAMINA_COST);
-        var weaponId = serverPlayer.getUseItem().getDescriptionId().replace("item.", "");
-
-        if (RANGED_WEAPONS_STAMINA_VALUES.containsKey(weaponId)) {
-            drawStaminaCost = RANGED_WEAPONS_STAMINA_VALUES.get(weaponId).floatValue();
-        }
+        var dataPackItemValue = getDataPackItemValue(RANGED_WEAPONS_STAMINA_VALUES, rangedWeapon);
+        drawStaminaCost = (dataPackItemValue > 0) ? dataPackItemValue : drawStaminaCost;
 
         drawStaminaCost *= ServerConfigs.PULL_BOW_STAMINA_MULTIPLIER.get().floatValue();
 
         return drawStaminaCost;
+    }
+
+    public static float getDataPackItemValue(HashMap<String, Double> dataPackMap, ItemStack item) {
+        var itemId = item.getDescriptionId().replace("item.", "");
+
+        return dataPackMap.containsKey(itemId) ? dataPackMap.get(itemId).floatValue() : 0;
     }
 }

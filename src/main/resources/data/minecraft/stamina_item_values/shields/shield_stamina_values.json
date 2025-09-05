@@ -1,6 +1,6 @@
 [
   {
     "name": "shield",
-    "stamina_reduction_percentage": 0
+    "stamina_reduction_percentage": 25
   }
 ]
