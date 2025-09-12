@@ -52,6 +52,37 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
     static final int STAMINA_GAUGE_START_POS_X = 0;
     static final int STAMINA_GAUGE_START_POS_Y = 26;
 
+
+    // Simplified Stamina Bar position information
+    static final int SIMPLIFIED_STAMINA_BAR_WIDTH = 13;
+    static final int SIMPLIFIED_STAMINA_BAR_TOP_POS_X = 0;
+    static final int SIMPLIFIED_STAMINA_BAR_TOP_POS_Y = 0;
+    static final int SIMPLIFIED_STAMINA_BAR_TOP_HEIGHT = 4;
+    static final int SIMPLIFIED_STAMINA_BAR_MIDDLE_POS_X = 0;
+    static final int SIMPLIFIED_STAMINA_BAR_MIDDLE_POS_Y = 6;
+    static final int SIMPLIFIED_STAMINA_BAR_MIDDLE_HEIGHT = 5;
+    static final int SIMPLIFIED_STAMINA_BAR_BOTTOM_POS_X = 0;
+    static final int SIMPLIFIED_STAMINA_BAR_BOTTOM_POS_Y = 13;
+    static final int SIMPLIFIED_STAMINA_BAR_BOTTOM_HEIGHT = 2;
+
+    static final int SIMPLIFIED_STAMINA_GAUGE_START_POS_X = 0;
+    static final int SIMPLIFIED_STAMINA_GAUGE_START_POS_Y = 17;
+
+    // Detailed Stamina Bar position information
+    static final int DETAILED_STAMINA_BAR_HEIGHT = 13;
+    static final int DETAILED_STAMINA_BAR_END_POS_X = 21;
+    static final int DETAILED_STAMINA_BAR_END_POS_Y = 24;
+    static final int DETAILED_STAMINA_BAR_END_WIDTH = 3;
+    static final int DETAILED_STAMINA_BAR_MIDDLE_POS_X = 4;
+    static final int DETAILED_STAMINA_BAR_MIDDLE_POS_Y = 24;
+    static final int DETAILED_STAMINA_BAR_MIDDLE_WIDTH = 15;
+    static final int DETAILED_STAMINA_BAR_BEGINNING_POS_X = 0;
+    static final int DETAILED_STAMINA_BAR_BEGINNING_POS_Y = 24;
+    static final int DETAILED_STAMINA_BAR_BEGINNING_WIDTH = 2;
+
+    static final int DETAILED_STAMINA_GAUGE_START_POS_X = 0;
+    static final int DETAILED_STAMINA_GAUGE_START_POS_Y = 17;
+
     static final int STAMINA_GAUGE_WIDTH = 25;
     static final int STAMINA_GAUGE_HEIGHT = 5;
 
@@ -101,8 +132,10 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
 
         int imageWidth = FIRST_STAMINA_BAR_WIDTH;
         int imageHeight = STAMINA_BAR_HEIGHT;
-
-        drawStaminaBarIncrements(guiGraphics, maxStamina / 25, barX, barY, 3);
+        guiGraphics.pose().pushPose();
+//        guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
+        drawSimplifiedStaminaBar(guiGraphics, maxStamina / 25, barX, barY);
+        drawDetailedStaminaBar(guiGraphics, maxStamina / 25, barX + 11, barY - DETAILED_STAMINA_BAR_HEIGHT);
 
         int spriteX = 30;
         int spriteY = 17;
@@ -117,16 +150,17 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         // Red and green at 100% at 50 stamina
         // Green drops to 50% at 25 stamina
         // Green is 0% and red 100% at 0 stamina
-        float green = (stamina < 50) ? stamina / 50.0f : 1.0f;
-        // TODO: Math is just off here. Fix tomorrow. Simple fix, just too tired to get it now.
-        float red = (stamina > 50) ? 1 - ((float) stamina / maxStamina) : 1.0f;
+        float halfMaxStamina = maxStamina / 2.0f;
+        float green = (stamina < halfMaxStamina) ? stamina / halfMaxStamina : 1.0f;
+        float red = (stamina > halfMaxStamina) ? (maxStamina - stamina) / (halfMaxStamina) : 1.0f;
         float blue = 0.0f;
 
-        SimpleStamina.LOGGER.info("current stamina: {} | red: {} | green: {}", stamina, red, green);
+//        SimpleStamina.LOGGER.info("current stamina: {} | red: {} | green: {}", stamina, red, green);
 
         guiGraphics.setColor(red, green, blue, 1.0f);
 
-        drawStaminaGaugeSegments(guiGraphics, stamina, maxStamina, barX, barY);
+//        drawStaminaGaugeSegments(guiGraphics, stamina, maxStamina, barX, barY);
+        guiGraphics.pose().popPose();
 //        // TODO: Probably want to modify the stamina bar that drains so that the last bit doesn't get removed until the user is at absolute 0 on stamina.
 //        customGraphicsRenderer(guiGraphics, barX, barY, spriteX, spriteY, (int) (imageWidth * Math.min((stamina / (double) maxStamina), 1)), imageHeight);
 //        barX += STAMINA_GAUGE_WIDTH;
@@ -158,11 +192,46 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         }
     }
 
+    // Draws the gauges and the fill for them based on the number of stamina increments that the player has.
+//    private static void drawSimplifiedStaminaGauge(GuiGraphics guiGraphics, int stamina, int maxStamina, int guiStartPosX, int guiStartPosY) {
+//        int staminaPerSegment = 25;
+//        int padding = 3;
+//        int numberOfIncrements = maxStamina / staminaPerSegment;
+//        int imgStartPosX = SIMPLIFIED_STAMINA_BAR_TOP_POS_X;
+//        int imgStartPosY = SIMPLIFIED_STAMINA_BAR_TOP_POS_Y;
+//
+////        SimpleStamina.LOGGER.info("Current stamina: {}", stamina);
+//        for (int i = 0; i < numberOfIncrements; i++) {
+////            SimpleStamina.LOGGER.info("Iteration: {}", i);
+////            int j = numberOfIncrements - i;
+//            int segmentMaxStamina = staminaPerSegment * (i + 1);
+//            int segmentMinStamina = segmentMaxStamina - staminaPerSegment;
+////            SimpleStamina.LOGGER.info("segment min stamina: {} | segment max stamina: {}", segmentMinStamina, segmentMaxStamina);
+//
+//            if (stamina >= segmentMinStamina) {
+////                int gaugePercentFilled = segmentMaxStamina - stamina;
+//                int gaugePixelsFilled = (int) (STAMINA_GAUGE_WIDTH * Math.min(((double) (stamina - segmentMinStamina) / staminaPerSegment), 1));
+//
+////                SimpleStamina.LOGGER.info("stamina: {} | stamina per segment: {}", stamina, staminaPerSegment);
+////                SimpleStamina.LOGGER.info("stamina over stamina per segment: {}", ((double) stamina / staminaPerSegment));
+////                SimpleStamina.LOGGER.info("math min of that and 1: {}", Math.min((stamina / staminaPerSegment), 1));
+////                SimpleStamina.LOGGER.info("stamina gauge width: {}", STAMINA_GAUGE_WIDTH);
+////                SimpleStamina.LOGGER.info("gauge percentage filled: {}", gaugePixelsFilled);
+//                customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, imgStartPosX, imgStartPosY, gaugePixelsFilled, STAMINA_BAR_HEIGHT);
+////                guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
+//            }
+//            guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
+//
+////            int staminaGaugeMax = (int) (STAMINA_GAUGE_WIDTH * Math.min((stamina / (double) (maxStamina / j)), 1));
+////            customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, imgStartPosX, imgStartPosY, staminaGaugeMax, STAMINA_BAR_HEIGHT);
+////            guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
+//        }
+//    }
 
     // Draws the gauges and the fill for them based on the number of stamina increments that the player has.
     private static void drawStaminaGaugeSegments(GuiGraphics guiGraphics, int stamina, int maxStamina, int guiStartPosX, int guiStartPosY) {
         int staminaPerSegment = 25;
-        int padding = 3;
+        int padding = 2;
         int numberOfIncrements = maxStamina / staminaPerSegment;
         int imgStartPosX = STAMINA_GAUGE_START_POS_X;
         int imgStartPosY = STAMINA_GAUGE_START_POS_Y;
@@ -193,6 +262,47 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
 //            customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, imgStartPosX, imgStartPosY, staminaGaugeMax, STAMINA_BAR_HEIGHT);
 //            guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
         }
+    }
+
+    // Draws the simplified stamina bar for the player. TODO: Add a more detailed explanation later.
+    private static void drawSimplifiedStaminaBar(GuiGraphics guiGraphics, int numberOfIncrements, int guiStartPosX, int guiStartPosY) {
+
+        // Render the bottom of the simplified stamina bar.
+        customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, SIMPLIFIED_STAMINA_BAR_BOTTOM_POS_X, SIMPLIFIED_STAMINA_BAR_BOTTOM_POS_Y, SIMPLIFIED_STAMINA_BAR_WIDTH, SIMPLIFIED_STAMINA_BAR_BOTTOM_HEIGHT);
+
+        // Render the middle segments of the simplified stamina bar. Should be one segment for each 25 points of stamina (will potentially configure this later).
+        for (int i = 0; i < numberOfIncrements; i++) {
+            guiStartPosY -= (SIMPLIFIED_STAMINA_BAR_MIDDLE_HEIGHT);
+            customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, SIMPLIFIED_STAMINA_BAR_MIDDLE_POS_X, SIMPLIFIED_STAMINA_BAR_MIDDLE_POS_Y, SIMPLIFIED_STAMINA_BAR_WIDTH, SIMPLIFIED_STAMINA_BAR_MIDDLE_HEIGHT);
+
+        }
+
+        guiStartPosY -= (SIMPLIFIED_STAMINA_BAR_TOP_HEIGHT);
+
+//        // Render the bottom of the simplified stamina bar after all middle segments have been rendered.
+        customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, SIMPLIFIED_STAMINA_BAR_TOP_POS_X, SIMPLIFIED_STAMINA_BAR_TOP_POS_Y, SIMPLIFIED_STAMINA_BAR_WIDTH, SIMPLIFIED_STAMINA_BAR_TOP_HEIGHT);
+
+    }
+
+    // Draws the deetailed stamina bar for the player. TODO: Add a more detailed explanation later.
+    private static void drawDetailedStaminaBar(GuiGraphics guiGraphics, int numberOfIncrements, int guiStartPosX, int guiStartPosY) {
+
+        // Render the bottom of the detailed stamina bar.
+        customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, DETAILED_STAMINA_BAR_BEGINNING_POS_X, DETAILED_STAMINA_BAR_BEGINNING_POS_Y, DETAILED_STAMINA_BAR_BEGINNING_WIDTH, DETAILED_STAMINA_BAR_HEIGHT);
+
+        guiStartPosX += (DETAILED_STAMINA_BAR_BEGINNING_WIDTH);
+        // Render the middle segments of the detailed stamina bar. Should be one segment for each 25 points of stamina (will potentially configure this later).
+        for (int i = 0; i < numberOfIncrements; i++) {
+            customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, DETAILED_STAMINA_BAR_MIDDLE_POS_X, DETAILED_STAMINA_BAR_MIDDLE_POS_Y, DETAILED_STAMINA_BAR_MIDDLE_WIDTH, DETAILED_STAMINA_BAR_HEIGHT);
+            guiStartPosX += (DETAILED_STAMINA_BAR_MIDDLE_WIDTH);
+
+        }
+
+//        guiStartPosX += (DETAILED_STAMINA_BAR_END_WIDTH);
+
+//        // Render the bottom of the detailed stamina bar after all middle segments have been rendered.
+        customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, DETAILED_STAMINA_BAR_END_POS_X, DETAILED_STAMINA_BAR_END_POS_Y, DETAILED_STAMINA_BAR_END_WIDTH, DETAILED_STAMINA_BAR_HEIGHT);
+
     }
 
     // Draws the gauges and the fill for them based on the number of stamina increments that the player has.
