@@ -43,7 +43,7 @@ public class ClientConfigs {
         STAMINA_BAR_X_OFFSET = BUILDER.define("staminaBarXOffset", 0);
         STAMINA_BAR_Y_OFFSET = BUILDER.define("staminaBarYOffset", 0);
         STAMINA_BAR_TEXT_VISIBLE = BUILDER.define("staminaBarTextVisible", true);
-        STAMINA_BAR_ANCHOR = BUILDER.defineEnum("staminaBarAnchor", StaminaBarOverlay.Anchor.Center);
+        STAMINA_BAR_ANCHOR = BUILDER.defineEnum("staminaBarAnchor", StaminaBarOverlay.Anchor.TopLeft);
         STAMINA_TEXT_X_OFFSET = BUILDER.define("staminaTextXOffset", 0);
         STAMINA_TEXT_Y_OFFSET = BUILDER.define("staminaTextYOffset", 0);
         BUILDER.pop();
