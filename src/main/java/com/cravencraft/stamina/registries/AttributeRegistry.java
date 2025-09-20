@@ -20,6 +20,17 @@ public class AttributeRegistry {
     public static DeferredHolder<Attribute, Attribute> MAX_STAMINA = ATTRIBUTES.register("max_stamina", () -> (
             new RangedAttribute("attribute.simple_stamina.max_stamina", 100.0D, 0.0D, 10000.0D).setSyncable(true)
     ));
+    public static DeferredHolder<Attribute, Attribute> PLAYER_EXHAUSTION_LEVEL = ATTRIBUTES.register("player_exhaustion_level", () -> (
+            new RangedAttribute("attribute.simple_stamina.player_exhaustion_level", 0, 0, 100).setSyncable(true)
+    ));
+    public static DeferredHolder<Attribute, Attribute> PLAYER_SEGMENT_EXHAUSTION_AMOUNT = ATTRIBUTES.register("player_segment_exhaustion_amount", () -> (
+            new RangedAttribute("attribute.simple_stamina.player_segment_exhaustion_amount", 0, 0, 1000).setSyncable(true)
+    ));
+    // TODO: Rename this. It's not necessarily the player's exhaustion limit, but more so how much stamina can be consumed until the player's exhaustion level increases
+    //       by a point/percent.
+    public static DeferredHolder<Attribute, Attribute> PLAYER_EXHAUSTION_LIMIT = ATTRIBUTES.register("player_exhaustion_limit", () -> (
+            new RangedAttribute("attribute.simple_stamina.player_exhaustion_limit", 5, 0, 1000).setSyncable(true)
+    ));
     public static DeferredHolder<Attribute, Attribute> STAMINA_REGEN = ATTRIBUTES.register("stamina_regen", () -> (
             new RangedAttribute("attribute.simple_stamina.stamina_regen", .02D, 0.0D, 1.0D).setSyncable(true)
     ));

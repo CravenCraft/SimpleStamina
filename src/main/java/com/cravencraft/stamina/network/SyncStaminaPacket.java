@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class SyncStaminaPacket implements CustomPacketPayload {
     private int playerStamina = 0;
+    private int playerMaxStamina = 0;
 
     private StaminaData staminaData = null;
 
@@ -26,10 +27,12 @@ public class SyncStaminaPacket implements CustomPacketPayload {
 
     public SyncStaminaPacket(FriendlyByteBuf buf) {
         this.playerStamina = buf.readInt();
+        this.playerMaxStamina = buf.readInt();
     }
 
     public void write(FriendlyByteBuf buf) {
         buf.writeInt((int) this.staminaData.getStamina());
+        buf.writeInt(this.staminaData.getMaxStamina());
     }
 
     public static void handle(SyncStaminaPacket packet, IPayloadContext context) {
@@ -47,6 +50,7 @@ public class SyncStaminaPacket implements CustomPacketPayload {
             }
             else {
                 ClientStaminaManager.setStaminaFromServer(packet.playerStamina);
+                ClientStaminaManager.setMaxStaminaFromServer(packet.playerMaxStamina);
             }
         });
     }

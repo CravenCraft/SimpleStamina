@@ -13,14 +13,18 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import static com.cravencraft.stamina.capability.StaminaData.SEGMENT_STAMINA_AMOUNT;
 import static com.cravencraft.stamina.config.ServerConfigs.*;
+import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
 import static com.cravencraft.stamina.registries.DatapackRegistry.RANGED_WEAPONS_STAMINA_VALUES;
 
 public class ServerStaminaManager extends StaminaManager {
     public static final ResourceLocation ATTACK_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath(SimpleStamina.MODID, "attack_speed_modifier");
 
+    // TODO: Need to factor in exhaustion attributes here as well.
     public void onPlayerJoin(ServerPlayer serverPlayer) {
         var serverStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
+//        serverStaminaData.updateMaxStaminaOnPlayerJoin();
         PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(serverStaminaData));
     }
 
@@ -39,7 +43,56 @@ public class ServerStaminaManager extends StaminaManager {
         this.tickSwimStaminaCost(serverPlayer, serverStaminaData);
         this.tickAttackStaminaCost(serverPlayer, serverStaminaData);
 
+        if (serverPlayer.tickCount % 20 == 0) {
+            this.tickStaminaExhaustion(serverStaminaData);
+        }
+
+
         this.setExhaustionEffects(serverPlayer, serverStaminaData);
+    }
+
+    // TODO: Rename this and the field.
+    public void modifyStaminaConsumedBeforeExhaustion(ServerStaminaData serverStaminaData) {
+        SimpleStamina.LOGGER.info("total stamina consumed: {}", serverStaminaData.getTotalStaminaConsumed());
+        if (serverStaminaData.getTotalStaminaConsumed() < serverStaminaData.getSegmentExhaustionLimit()) return;
+
+        int exhaustionToAdd = (int) (serverStaminaData.getTotalStaminaConsumed() / serverStaminaData.getSegmentExhaustionLimit());
+        var playerExhaustionLevel = serverStaminaData.getPlayerExhaustionLevel();
+        var staminaConsumedToRemove = serverStaminaData.getTotalStaminaConsumed() - (exhaustionToAdd * serverStaminaData.getSegmentExhaustionLimit());
+        // TODO: If I set exhaustion to go below 25 segments, then this could potentially add up.
+        //  There will at the very least be several issues to address if I want total stamina to actually hit 0.
+        serverStaminaData.setTotalStaminaConsumed(staminaConsumedToRemove);
+        if (playerExhaustionLevel >= 100) return;
+
+        serverStaminaData.setPlayerExhaustionLevel(playerExhaustionLevel + exhaustionToAdd);
+
+    }
+
+    // TODO: This SHOULD work fairly well, and not be TOO taxing. I can limit this to only being called every 20 ticks
+    //       to limit its impact. Changing max stamina with a second delay shouldn't be too big of a gameplay concern.
+    public void modifyMaxStaminaBasedOnExhaustion(ServerStaminaData serverStaminaData) {
+        SimpleStamina.LOGGER.info("player exhaustion level before setting: {}", serverStaminaData.getPlayerExhaustionLevel());
+        var staminaNotExhausted = serverStaminaData.player.getAttributeValue(MAX_STAMINA) - serverStaminaData.getPlayerExhaustionLevel();
+        int newMaxStamina;
+        if (serverStaminaData.getMaxStamina() < staminaNotExhausted)  {
+            newMaxStamina = serverStaminaData.getMaxStamina() + SEGMENT_STAMINA_AMOUNT;
+            if (newMaxStamina > staminaNotExhausted) return;
+
+        }
+        else {
+            newMaxStamina = serverStaminaData.getMaxStamina() - SEGMENT_STAMINA_AMOUNT;
+            if (newMaxStamina < staminaNotExhausted) return;
+
+
+        }
+
+        SimpleStamina.LOGGER.info("player exhaustion level AFTER setting: {}", serverStaminaData.getPlayerExhaustionLevel());
+        serverStaminaData.setMaxStamina(newMaxStamina);
+    }
+
+    public void tickStaminaExhaustion(ServerStaminaData serverStaminaData) {
+        modifyStaminaConsumedBeforeExhaustion(serverStaminaData);
+        modifyMaxStaminaBasedOnExhaustion(serverStaminaData);
     }
 
     public void tickSprintStaminaCost(ServerPlayer serverPlayer, ServerStaminaData serverStaminaData) {
@@ -113,6 +166,17 @@ public class ServerStaminaManager extends StaminaManager {
         var staminaCost = StaminaUtils.calculateDrawBowStaminaCost(serverPlayer, itemStack);
         var staminaToSet = serverPlayerStaminaData.getStaminaAfterRemove(staminaCost);
         serverPlayerStaminaData.setStamina(staminaToSet);
+    }
+
+    public void restorePlayerStaminaAfterSleeping(ServerPlayer serverPlayer) {
+//        serverPlayer.startSleepInBed()
+        var serverPlayerStaminaData = ServerStaminaData.getPlayerStaminaData(serverPlayer);
+        serverPlayerStaminaData.removePlayerExhaustionAttributeModifications();
+        serverPlayerStaminaData.removePlayerSegmentExhaustionAttributeModifications();
+        serverPlayerStaminaData.restoreMaxStamina();
+//        serverPlayerStaminaData.updateMaxStamina();
+//        serverPlayerStaminaData.setMaxStamina((int) serverPlayer.getAttributeValue(MAX_STAMINA));
+
     }
 
     /**

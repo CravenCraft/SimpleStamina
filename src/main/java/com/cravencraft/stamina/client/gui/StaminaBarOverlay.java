@@ -120,17 +120,18 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         var screenHeight = guiGraphics.guiHeight();
 
         int stamina = (int) ClientStaminaManager.getClientStaminaData().getStamina();
-        if (!shouldShowStaminaBar(player, stamina)) {
-            return;
-        }
 
-
+        // TODO: Set this up properly.
+//        if (!shouldShowStaminaBar(player, stamina)) {
+//            return;
+//        }
 
         int configOffsetX = ClientConfigs.STAMINA_BAR_X_OFFSET.get();
         int configOffsetY = ClientConfigs.STAMINA_BAR_Y_OFFSET.get();
         Anchor anchor = ClientConfigs.STAMINA_BAR_ANCHOR.get();
 
-        int maxStamina = (int) player.getAttributeValue(MAX_STAMINA);
+        int totalMaxStamina = (int) player.getAttributeValue(MAX_STAMINA);
+        int currentMaxStamina = ClientStaminaManager.getClientStaminaData().getMaxStamina();
         int barX = getBarX(anchor, screenWidth) + configOffsetX;
         int barY = getBarY(anchor, screenHeight, Minecraft.getInstance().gui) - configOffsetY;
 
@@ -144,8 +145,8 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         //       Have the simplified gauge always show, and the detailed gauge only show when actively draining stamina. Have it be animated and shoot out of the simplified gauge.
         //       Have some feedback to the player when they try to drain stamina and have none.
         //       Create a pulsating exclamation mark or something to indicate when the player is low on stamina (< 25% remaining), and they're using stamina.
-        drawSimplifiedStaminaBar(guiGraphics, maxStamina / 25, barX, barY);
-        drawDetailedStaminaBar(guiGraphics, maxStamina / 25, barX + 11, barY - DETAILED_STAMINA_BAR_HEIGHT);
+        drawSimplifiedStaminaBar(guiGraphics, totalMaxStamina / 25, barX, barY);
+        drawDetailedStaminaBar(guiGraphics, totalMaxStamina / 25, barX + 11, barY - DETAILED_STAMINA_BAR_HEIGHT);
 
         // Want 100% green at 100 stamina
         // Have red increase from 0 -> 50% at 75 stamina
@@ -154,28 +155,30 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         // Green is 0% and red 100% at 0 stamina
         float minColorValue = 0.25f;
         float offsetConstant = 0.015f;
-        float halfMaxStamina = maxStamina / 2.0f;
+        float halfMaxStamina = totalMaxStamina / 2.0f;
         float green = (stamina > halfMaxStamina) ? 1.0f : (stamina * offsetConstant) + minColorValue;
-        float red = (stamina > halfMaxStamina) ? ((maxStamina - stamina) * offsetConstant) + minColorValue : 1.0f;
-        float blue = (stamina > halfMaxStamina) ? (stamina - halfMaxStamina) / maxStamina : minColorValue;
+        float red = (stamina > halfMaxStamina) ? ((totalMaxStamina - stamina) * offsetConstant) + minColorValue : 1.0f;
+        float blue = (stamina > halfMaxStamina) ? (stamina - halfMaxStamina) / totalMaxStamina : minColorValue;
 
         // 100% = r: 0.25, g: 1.0, b: 0.5
         // 50% = r: 1.0, g: 1.0, b: 0.25
         // 0% = r: 1.0, g: 0.25, b: 0.25
 
         guiGraphics.setColor(red, green, blue, 1.0f);
-        fillDetailedStaminaBar(guiGraphics, stamina, maxStamina, barX + 14, barY - 13);
-        fillSimplifiedStaminaBar(guiGraphics, stamina, maxStamina, barX + 2, barY - 5);
+        fillDetailedStaminaBar(guiGraphics, stamina, currentMaxStamina, barX + 14, barY - 13);
+        fillSimplifiedStaminaBar(guiGraphics, currentMaxStamina,barX + 2, barY - 5);
 
         guiGraphics.pose().popPose();
 
         guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-
+        // TODO: If I keep this, then I need to modify the total stamina here to show the CURRENT total stamina and not
+        //      total in general. I don't want to modify the variable itself above since that dictates the gui height and width,
+        //      but I just want to modify it after this if statement to show the total current.
         if (ClientConfigs.STAMINA_BAR_TEXT_VISIBLE.get()) {
             int textX = ClientConfigs.STAMINA_TEXT_X_OFFSET.get() + barX + imageWidth / 2 - (int) ((("" + stamina).length() + 0.5) * CHAR_WIDTH);
             int textY = ClientConfigs.STAMINA_TEXT_Y_OFFSET.get() + barY + ICON_ROW_HEIGHT;
-            String staminaFraction = (stamina) + "/" + maxStamina;
+            String staminaFraction = (stamina) + "/" + totalMaxStamina;
 //            guiGraphics.pose().pushPose();
             guiGraphics.drawString(Minecraft.getInstance().font, staminaFraction, textX, textY, TEXT_COLOR);
         }
@@ -274,10 +277,11 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
     }
 
     // Draws the gauges and the fill for them based on the number of stamina increments that the player has. TODO: Change description.
-    private static void fillSimplifiedStaminaBar(GuiGraphics guiGraphics, int stamina, int maxStamina, int guiStartPosX, int guiStartPosY) {
+    private static void fillSimplifiedStaminaBar(GuiGraphics guiGraphics, int currentMaxStamina, int guiStartPosX, int guiStartPosY) {
         int staminaPerSegment = 25;
         // TODO: This should not use "maxStamina". It should use the current max or whatever I end up using as that.
-        int numberOfIncrements = maxStamina / staminaPerSegment;
+        int numberOfIncrements = currentMaxStamina / staminaPerSegment;
+
 
         for (int i = 0; i < numberOfIncrements; i++) {
             customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, SIMPLIFIED_STAMINA_GAUGE_START_POS_X, SIMPLIFIED_STAMINA_GAUGE_START_POS_Y, SIMPLIFIED_STAMINA_GAUGE_WIDTH, SIMPLIFIED_STAMINA_GAUGE_HEIGHT);
@@ -304,6 +308,7 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
     }
 
     // Draws the gauges and the fill for them based on the number of stamina increments that the player has. TODO: Change description.
+    // TODO: This could potentially cause issues with the increments. Need to have all increments and staminaPerSegment set to constants like 25.
     private static void fillDetailedStaminaBar(GuiGraphics guiGraphics, int stamina, int maxStamina, int guiStartPosX, int guiStartPosY) {
         int staminaPerSegment = 25;
         int numberOfIncrements = maxStamina / staminaPerSegment;

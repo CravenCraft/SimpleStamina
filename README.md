@@ -13,3 +13,7 @@ A not so simple stamina system.
 - Adding support for sleeping to set the stamina bar sections back to full.
 - Adding support for certain foods giving a certain number of sections back per sleep cycle.
 
+## Potential Bugs
+- There's an issue when generating stamina after just reducing the max stamina (usually happens around 50 or 25 max stamina). 
+   Need to look into this and find the root cause. Seems fairly consistent in being able to reproduce it. 
+

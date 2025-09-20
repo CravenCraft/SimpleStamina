@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
 import static com.cravencraft.stamina.config.ServerConfigs.*;
+import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
 import static com.cravencraft.stamina.registries.AttributeRegistry.STAMINA_REGEN;
 import static com.cravencraft.stamina.registries.DatapackRegistry.RANGED_WEAPONS_STAMINA_VALUES;
 
@@ -31,12 +32,20 @@ public class ClientStaminaManager extends StaminaManager {
      * @param playerStamina
      */
     public static void setStaminaFromServer(int playerStamina) {
+//        SimpleStamina.LOGGER.info("client side current stamina: {}", clientStaminaData.getStamina());
         clientStaminaData.setOldStamina((int) clientStaminaData.getStamina());
         clientStaminaData.setExpectedStaminaFromServer(playerStamina);
 //        SimpleStamina.LOGGER.info("CLIENT SIDE. Old stamina: {} | Current Stamina: {} | New Stamina: {}", oldStamina, getStamina(), expectedStaminaFromServer);
     }
 
+    public static void setMaxStaminaFromServer(int playerMaxStamina) {
+        if (clientStaminaData.getMaxStamina() == playerMaxStamina) return;
+        SimpleStamina.LOGGER.info("setting max stamina from server {}", playerMaxStamina);
+        clientStaminaData.setMaxStamina(playerMaxStamina);
+    }
+
     public void clientTick() {
+//        SimpleStamina.LOGGER.info("--- client tick. current stamina: {} | max stamina: {} ---", clientStaminaData.getStamina(), clientStaminaData.getMaxStamina());
         if (clientStaminaData.getExpectedStaminaFromServer() != clientStaminaData.getStamina()) {
             this.tickAddStamina();
             this.tickRemoveStamina();
@@ -46,7 +55,9 @@ public class ClientStaminaManager extends StaminaManager {
     }
 
     private void tickAddStamina() {
-        var addStaminaSpeed = (int) (localPlayer.getAttributeValue(STAMINA_REGEN) * clientStaminaData.getMaxStamina());
+        var addStaminaSpeed = (int) (localPlayer.getAttributeValue(STAMINA_REGEN) * localPlayer.getAttributeValue(MAX_STAMINA));
+//        SimpleStamina.LOGGER.info("stamina regen multiplier: {} | max stamina: {}", localPlayer.getAttributeValue(STAMINA_REGEN), clientStaminaData.getMaxStamina());
+//        SimpleStamina.LOGGER.info("add stamina speed: {}", addStaminaSpeed);
         for (int i = 0; i < addStaminaSpeed; i++) {
             if (clientStaminaData.getExpectedStaminaFromServer() <= clientStaminaData.getStamina()) return;
             var staminaToAdd = clientStaminaData.getStaminaAfterAdd(1);

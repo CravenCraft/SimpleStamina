@@ -1,14 +1,20 @@
 package com.cravencraft.stamina.capability;
 
+import com.cravencraft.stamina.SimpleStamina;
 import com.cravencraft.stamina.events.ChangeStaminaEvent;
 import com.cravencraft.stamina.network.SyncStaminaPacket;
 import com.cravencraft.stamina.registries.DataAttachmentRegistry;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import static com.cravencraft.stamina.manager.StaminaManager.STAMINA_REGEN_COOLDOWN;
+import static com.cravencraft.stamina.manager.StaminaManager.STAMINA_REGEN_TICKS;
+import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
 
 /**
  * TODO: Ok, got the basics of the event system down. Need to decide how I want to do this, and if I want to break this
@@ -56,6 +62,17 @@ public class ServerStaminaData extends StaminaData {
         this.swingDuration = swingDuration;
     }
 
+    @Override
+    public void setMaxStamina(int maxStamina) {
+        super.setMaxStamina(maxStamina);
+        PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(this));
+    }
+
+    public void restoreMaxStamina() {
+        this.maxStamina = (int) this.player.getAttributeValue(MAX_STAMINA);
+        PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(this));
+    }
+
     public void setStamina(float stamina) {
         ChangeStaminaEvent event = new ChangeStaminaEvent(this.player, this, this.stamina, stamina);
         if (!NeoForge.EVENT_BUS.post(event).isCanceled()) {
@@ -72,6 +89,19 @@ public class ServerStaminaData extends StaminaData {
         PacketDistributor.sendToPlayer(serverPlayer, new SyncStaminaPacket(this));
     }
 
+    @Override
+    public float getStaminaAfterRemove(float stamina) {
+        STAMINA_REGEN_COOLDOWN = STAMINA_REGEN_TICKS;
+        if (this.stamina <= 0.0f) return 0.0f;
+
+        var playerMaxStamina = (float) this.player.getAttributeValue(MAX_STAMINA);
+        var staminaToSet = Mth.clamp(stamina, 0.0f, playerMaxStamina);
+
+        iterateSegmentExhaustion(staminaToSet);
+
+        return Math.max(this.stamina - staminaToSet, 0);
+    }
+
     public void saveNBTData(CompoundTag compoundTag, HolderLookup.Provider provider) {
         compoundTag.putInt(STAMINA, (int) stamina);
     }
@@ -82,5 +112,13 @@ public class ServerStaminaData extends StaminaData {
 
     public static ServerStaminaData getPlayerStaminaData(LivingEntity livingEntity) {
         return livingEntity.getData(DataAttachmentRegistry.SERVER_STAMINA_DATA);
+    }
+
+    private void iterateSegmentExhaustion(double staminaToRemove) {
+        if (this.maxStamina <= SEGMENT_STAMINA_AMOUNT) return;
+
+        this.totalStaminaConsumed = this.totalStaminaConsumed + staminaToRemove;
+
+        SimpleStamina.LOGGER.info("iterate segment exhaustion. total stamina consumed: {}", this.totalStaminaConsumed);
     }
 }
