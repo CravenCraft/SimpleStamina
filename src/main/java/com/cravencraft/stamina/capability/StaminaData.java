@@ -33,7 +33,7 @@ public static final ResourceLocation PLAYER_EXHAUSTION_LEVEL_MODIFIER = Resource
     protected int maxStamina;
     protected float stamina;
     public int segmentExhaustionLimit;
-    protected int playerExhaustionLevel;
+//    protected int playerExhaustionLevel;
     protected double totalStaminaConsumed;
     public Player player = null;
 
@@ -52,7 +52,7 @@ public static final ResourceLocation PLAYER_EXHAUSTION_LEVEL_MODIFIER = Resource
         this.maxStamina = (int) this.player.getAttributeValue(MAX_STAMINA);
         this.segmentExhaustionLimit = (int) this.player.getAttributeValue(PLAYER_EXHAUSTION_LIMIT);
         SimpleStamina.LOGGER.info("Setting stamina data for the player. segmentExhaustionLimit set: {}", this.segmentExhaustionLimit);
-        this.playerExhaustionLevel = (int) this.player.getAttributeValue(PLAYER_EXHAUSTION_LEVEL);
+//        this.playerExhaustionLevel = (int) this.player.getAttributeValue(PLAYER_EXHAUSTION_LEVEL);
         SimpleStamina.LOGGER.info("max stamina set: {}", this.maxStamina);
     }
 
@@ -97,21 +97,6 @@ public static final ResourceLocation PLAYER_EXHAUSTION_LEVEL_MODIFIER = Resource
 
     public void setSegmentExhaustionLimit(int segmentExhaustionLimit) {
         this.segmentExhaustionLimit = segmentExhaustionLimit;
-    }
-
-    // TODO: When this happens, need to set the current stamina to not be greater than the max stamina.
-    //       Probably want to change the name of this method as well. Maybe to something like "decreaseMaxStamina".
-    public void decreaseMaxStamina() {
-        if (playerExhaustionLevel % SEGMENT_STAMINA_AMOUNT == 0) {
-            this.maxStamina = (int) this.player.getAttributeValue(MAX_STAMINA);
-            var playerExhaustionLevel = (int) this.player.getAttributeValue(PLAYER_EXHAUSTION_LEVEL);
-            SimpleStamina.LOGGER.info("Updating the max stamina value {} by adding the player exhaustion level: {}", this.maxStamina, playerExhaustionLevel);
-            this.maxStamina = this.maxStamina - (playerExhaustionLevel);
-
-            if (this.stamina <= this.maxStamina) return;
-
-            this.stamina = this.maxStamina;
-        }
     }
 
     public void removePlayerExhaustionAttributeModifications () {

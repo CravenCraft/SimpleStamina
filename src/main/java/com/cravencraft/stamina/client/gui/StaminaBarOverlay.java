@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
+import static com.cravencraft.stamina.capability.StaminaData.SEGMENT_STAMINA_AMOUNT;
 import static com.cravencraft.stamina.registries.AttributeRegistry.MAX_STAMINA;
 
 public class StaminaBarOverlay implements LayeredDraw.Layer {
@@ -155,6 +156,7 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
         // Green is 0% and red 100% at 0 stamina
         float minColorValue = 0.25f;
         float offsetConstant = 0.015f;
+        // TODO: Want to make 75 stamina to be a bit more yellow, halfway to be a bit more orange, and 25 to be more red.
         float halfMaxStamina = totalMaxStamina / 2.0f;
         float green = (stamina > halfMaxStamina) ? 1.0f : (stamina * offsetConstant) + minColorValue;
         float red = (stamina > halfMaxStamina) ? ((totalMaxStamina - stamina) * offsetConstant) + minColorValue : 1.0f;
@@ -166,6 +168,44 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
 
         guiGraphics.setColor(red, green, blue, 1.0f);
         fillDetailedStaminaBar(guiGraphics, stamina, currentMaxStamina, barX + 14, barY - 13);
+
+        int simpleStaminaGauges = currentMaxStamina / SEGMENT_STAMINA_AMOUNT;
+
+        // TODO: Working as expected, but want to modify these values a bit as well as the detailed one some.
+        //       Want the 3 gauge to be a bit more yellow, the 2 gauge to slightly more orange, and the
+        //       1 gauge is fine.
+        switch (simpleStaminaGauges) {
+            case 4 -> {
+                red = 0.25f;
+                green = 1.0f;
+                blue = 0.5f;
+            }
+            case 3 -> {
+                red = 0.5f;
+                green = 1.0f;
+                blue = 0.5f;
+            }
+            case 2 -> {
+                red = 1.0f;
+                green = 1.0f;
+                blue = 0.25f;
+            }
+            case 1 -> {
+                red = 1.0f;
+                green = 0.25f;
+                blue = 0.25f;
+            }
+            case 0 -> {
+                red = 1.0f;
+                green = 0.0f;
+                blue = 0.0f;
+            }
+
+            default -> SimpleStamina.LOGGER.error("ERROR: Stamina gauges are not within the bound limits.");
+
+        }
+
+        guiGraphics.setColor(red, green, blue, 1.0f);
         fillSimplifiedStaminaBar(guiGraphics, currentMaxStamina,barX + 2, barY - 5);
 
         guiGraphics.pose().popPose();
@@ -181,78 +221,6 @@ public class StaminaBarOverlay implements LayeredDraw.Layer {
             String staminaFraction = (stamina) + "/" + totalMaxStamina;
 //            guiGraphics.pose().pushPose();
             guiGraphics.drawString(Minecraft.getInstance().font, staminaFraction, textX, textY, TEXT_COLOR);
-        }
-    }
-
-    // Draws the gauges and the fill for them based on the number of stamina increments that the player has.
-//    private static void drawSimplifiedStaminaGauge(GuiGraphics guiGraphics, int stamina, int maxStamina, int guiStartPosX, int guiStartPosY) {
-//        int staminaPerSegment = 25;
-//        int padding = 3;
-//        int numberOfIncrements = maxStamina / staminaPerSegment;
-//        int imgStartPosX = SIMPLIFIED_STAMINA_BAR_TOP_POS_X;
-//        int imgStartPosY = SIMPLIFIED_STAMINA_BAR_TOP_POS_Y;
-//
-////        SimpleStamina.LOGGER.info("Current stamina: {}", stamina);
-//        for (int i = 0; i < numberOfIncrements; i++) {
-////            SimpleStamina.LOGGER.info("Iteration: {}", i);
-////            int j = numberOfIncrements - i;
-//            int segmentMaxStamina = staminaPerSegment * (i + 1);
-//            int segmentMinStamina = segmentMaxStamina - staminaPerSegment;
-////            SimpleStamina.LOGGER.info("segment min stamina: {} | segment max stamina: {}", segmentMinStamina, segmentMaxStamina);
-//
-//            if (stamina >= segmentMinStamina) {
-////                int gaugePercentFilled = segmentMaxStamina - stamina;
-//                int gaugePixelsFilled = (int) (STAMINA_GAUGE_WIDTH * Math.min(((double) (stamina - segmentMinStamina) / staminaPerSegment), 1));
-//
-////                SimpleStamina.LOGGER.info("stamina: {} | stamina per segment: {}", stamina, staminaPerSegment);
-////                SimpleStamina.LOGGER.info("stamina over stamina per segment: {}", ((double) stamina / staminaPerSegment));
-////                SimpleStamina.LOGGER.info("math min of that and 1: {}", Math.min((stamina / staminaPerSegment), 1));
-////                SimpleStamina.LOGGER.info("stamina gauge width: {}", STAMINA_GAUGE_WIDTH);
-////                SimpleStamina.LOGGER.info("gauge percentage filled: {}", gaugePixelsFilled);
-//                customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, imgStartPosX, imgStartPosY, gaugePixelsFilled, STAMINA_BAR_HEIGHT);
-////                guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
-//            }
-//            guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
-//
-////            int staminaGaugeMax = (int) (STAMINA_GAUGE_WIDTH * Math.min((stamina / (double) (maxStamina / j)), 1));
-////            customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, imgStartPosX, imgStartPosY, staminaGaugeMax, STAMINA_BAR_HEIGHT);
-////            guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
-//        }
-//    }
-
-    // Draws the gauges and the fill for them based on the number of stamina increments that the player has.
-    private static void drawStaminaGaugeSegments(GuiGraphics guiGraphics, int stamina, int maxStamina, int guiStartPosX, int guiStartPosY) {
-        int staminaPerSegment = 25;
-        int padding = 2;
-        int numberOfIncrements = maxStamina / staminaPerSegment;
-        int imgStartPosX = STAMINA_GAUGE_START_POS_X;
-        int imgStartPosY = STAMINA_GAUGE_START_POS_Y;
-
-//        SimpleStamina.LOGGER.info("Current stamina: {}", stamina);
-        for (int i = 0; i < numberOfIncrements; i++) {
-//            SimpleStamina.LOGGER.info("Iteration: {}", i);
-//            int j = numberOfIncrements - i;
-            int segmentMaxStamina = staminaPerSegment * (i + 1);
-            int segmentMinStamina = segmentMaxStamina - staminaPerSegment;
-//            SimpleStamina.LOGGER.info("segment min stamina: {} | segment max stamina: {}", segmentMinStamina, segmentMaxStamina);
-
-            if (stamina >= segmentMinStamina) {
-//                int gaugePercentFilled = segmentMaxStamina - stamina;
-                int gaugePixelsFilled = (int) (STAMINA_GAUGE_WIDTH * Math.min(((double) (stamina - segmentMinStamina) / staminaPerSegment), 1));
-
-//                SimpleStamina.LOGGER.info("stamina: {} | stamina per segment: {}", stamina, staminaPerSegment);
-//                SimpleStamina.LOGGER.info("stamina over stamina per segment: {}", ((double) stamina / staminaPerSegment));
-//                SimpleStamina.LOGGER.info("math min of that and 1: {}", Math.min((stamina / staminaPerSegment), 1));
-//                SimpleStamina.LOGGER.info("stamina gauge width: {}", STAMINA_GAUGE_WIDTH);
-//                SimpleStamina.LOGGER.info("gauge percentage filled: {}", gaugePixelsFilled);
-                customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, imgStartPosX, imgStartPosY, gaugePixelsFilled, STAMINA_BAR_HEIGHT);
-//                guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
-            }
-            guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
-
-//            int staminaGaugeMax = (int) (STAMINA_GAUGE_WIDTH * Math.min((stamina / (double) (maxStamina / j)), 1));
-//            customGraphicsRenderer(guiGraphics, guiStartPosX, guiStartPosY, imgStartPosX, imgStartPosY, staminaGaugeMax, STAMINA_BAR_HEIGHT);
-//            guiStartPosX += (STAMINA_GAUGE_WIDTH + padding);
         }
     }
 
